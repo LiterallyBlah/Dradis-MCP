@@ -1,6 +1,6 @@
 # Dradis Pro MCP Server
 
-A production-ready MCP server for managing vulnerability issues in Dradis Pro using TypeScript.
+A production-ready MCP (Message Communication Protocol) server for managing vulnerability issues in Dradis Pro using TypeScript. This server acts as a bridge between your tools and Dradis Pro, providing a standardised interface for vulnerability management.
 
 ## 🚀 Quick Start
 
@@ -9,33 +9,66 @@ A production-ready MCP server for managing vulnerability issues in Dradis Pro us
    ```bash
    bun install
    ```
+3. Configure your Dradis API token in your environment
+4. Build the project:
+   ```bash
+   bun run build
+   ```
 
 ## ✨ Key Features
 
-- Comprehensive vulnerability issue management
-  - Create new vulnerability issues
+- **Project Management**
+  - Create new Dradis projects
+  - Set active project context
+  - Retrieve project details
+- **Comprehensive Vulnerability Management**
+  - Create new vulnerability issues with structured data
   - Update existing vulnerability findings
-  - Delete obsolete vulnerabilities
-  - Search and replace capabilities for scanner-specific content (Nessus, etc.)
-- Built with Bun for fast testing and development
-- Biome for linting and formatting
-- Automated version management
-- Clean, maintainable project structure
+  - Retrieve vulnerability lists and details
+  - Search and filter capabilities
+- **Built with Modern Tools**
+  - Bun for fast testing and development
+  - TypeScript for type safety
+  - Biome for linting and formatting
 
 ## 📂 Project Structure
 
 ```
 dradis-mcp/
 ├── src/
-│   ├── tools/          # Vulnerability management tools
-│   ├── utils/          # Shared utilities
-│   ├── main.ts         # Server entry point
-│   └── types.ts        # Type definitions
-├── tests/              # Test files
-├── biome.json          # Linting configuration
-├── tsconfig.json       # TypeScript configuration
-└── package.json        # Project dependencies
+│   ├── api/           # API endpoint handlers
+│   ├── tools/         # Vulnerability management tools
+│   ├── utils/         # Shared utilities
+│   ├── main.ts        # Server entry point
+│   └── types.ts       # Type definitions
+├── docs/             # API documentation
+├── tests/            # Test files
+├── biome.json        # Linting configuration
+├── tsconfig.json     # TypeScript configuration
+└── package.json      # Project dependencies
 ```
+
+## 🔌 API Endpoints
+
+The MCP server accepts JSON requests with the following structure:
+```json
+{
+    "action": "<actionName>",
+    "data": {
+        // Action-specific payload
+    }
+}
+```
+
+### Available Actions:
+- `createProject`: Create a new Dradis project
+- `createVulnerability`: Create a new vulnerability issue
+- `getVulnerability`: Retrieve vulnerability details
+- `updateVulnerability`: Update existing vulnerability
+- `getProjectDetails`: Get current project information
+- `getVulnerabilityList`: Retrieve list of vulnerabilities
+
+For detailed API documentation, see the `/docs` directory.
 
 ## 🛠️ Development
 
@@ -44,7 +77,7 @@ dradis-mcp/
 - **Lint code**: `bun run lint`
 - **Build project**: `bun run build`
 
-To add your Dradis Pro MCP server to Claude Desktop:
+### Integration with Claude Desktop
 
 1. Build the project:
    ```bash
