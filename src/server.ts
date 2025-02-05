@@ -1,8 +1,18 @@
+#!/usr/bin/env node
+
+// Configure TLS to accept self-signed certificates
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
-import { DradisAPI } from './api';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema } from './types';
-import { loadConfig } from './config';
+import { DradisAPI } from './api.js';
+import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema } from './types.js';
+import { loadConfig } from './config.js';
+import https from 'node:https';
+
+// Load environment variables from .env file
+dotenvConfig();
 
 // Load configuration first
 const config = loadConfig();

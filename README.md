@@ -46,16 +46,19 @@ To add Dradis MCP to your MCP configuration, add the following to your config fi
 
 ```json
 {
-  "mcps": {
-    "dradis": {
-      "command": "npm start",
-      "cwd": "/path/to/dradis-mcp",
+  "mcps": [
+    {
+      "key": "Dradis",
+      "command": "npx",
+      "description": "A Model Context Protocol server that provides integration with Dradis note-taking platform",
+      "args": ["-y", "dradis-mcp"],
       "env": {
-        "DRADIS_URL": "https://your-dradis-instance.com",
-        "DRADIS_API_TOKEN": "your-api-token"
-      }
+        "DRADIS_URL": "<url:string:Your Dradis instance URL>",
+        "DRADIS_API_TOKEN": "<token:string:Your Dradis API token>"
+      },
+      "isActive": false
     }
-  }
+  ]
 }
 ```
 

@@ -4,8 +4,8 @@ import {
   CreateVulnerabilityRequest, 
   VulnerabilityListItem,
   ProjectDetails,
-} from './types';
-import { Config } from './config';
+} from './types.js';
+import { Config } from './config.js';
 
 export class DradisAPI {
   private apiToken: string;
