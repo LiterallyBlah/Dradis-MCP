@@ -1,36 +1,11 @@
-import { Vulnerability, CreateProject, CreateVulnerabilityRequest, VulnerabilityListItem } from './types';
+import { 
+  Vulnerability, 
+  CreateProject, 
+  CreateVulnerabilityRequest, 
+  VulnerabilityListItem,
+  ProjectDetails,
+} from './types';
 import { Config } from './config';
-
-interface Client {
-  id: number;
-  name: string;
-}
-
-interface User {
-  email: string;
-}
-
-interface CustomField {
-  id: number;
-  name: string;
-  value: string;
-}
-
-interface ProjectCreationState {
-  state: 'being_created' | 'completed';
-}
-
-interface ProjectDetails {
-  id: number;
-  name: string;
-  client: Client;
-  project_creation?: ProjectCreationState;
-  created_at: string;
-  updated_at: string;
-  authors: User[];
-  owners: User[];
-  custom_fields?: CustomField[];
-}
 
 export class DradisAPI {
   private apiToken: string;
@@ -49,16 +24,33 @@ export class DradisAPI {
       ...options.headers,
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      let errorBody: unknown;
+      try {
+        errorBody = await response.clone().json();
+      } catch {
+        errorBody = await response.clone().text();
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status} ${response.statusText} for ${url}\n` +
+          `Response: ${typeof errorBody === 'string' ? errorBody : JSON.stringify(errorBody)}`
+        );
+      }
+
+      return await response.json() as T;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Network error while accessing ${url}: ${String(error)}`);
     }
-
-    return response.json() as Promise<T>;
   }
 
   async getProjectDetails(projectId: number): Promise<ProjectDetails> {

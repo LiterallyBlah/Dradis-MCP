@@ -1,12 +1,41 @@
 import { z } from "zod";
 
 // Project Types
+export const ClientSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+});
+
+export const UserSchema = z.object({
+  email: z.string(),
+});
+
+export const CustomFieldSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  value: z.string(),
+});
+
+export const ProjectCreationStateSchema = z.object({
+  state: z.enum(['being_created', 'completed']),
+});
+
 export const ProjectDetailsSchema = z.object({
   id: z.number(),
   name: z.string(),
-  // Add other project fields as needed
+  client: ClientSchema,
+  project_creation: ProjectCreationStateSchema.optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  authors: z.array(UserSchema),
+  owners: z.array(UserSchema),
+  custom_fields: z.array(CustomFieldSchema).optional(),
 });
 
+export type Client = z.infer<typeof ClientSchema>;
+export type User = z.infer<typeof UserSchema>;
+export type CustomField = z.infer<typeof CustomFieldSchema>;
+export type ProjectCreationState = z.infer<typeof ProjectCreationStateSchema>;
 export type ProjectDetails = z.infer<typeof ProjectDetailsSchema>;
 
 export const CreateProjectSchema = z.object({
