@@ -1,5 +1,36 @@
-import { ProjectDetails, Vulnerability, CreateProject } from './types';
+import { Vulnerability, CreateProject, CreateVulnerabilityRequest, VulnerabilityListItem } from './types';
 import { Config } from './config';
+
+interface Client {
+  id: number;
+  name: string;
+}
+
+interface User {
+  email: string;
+}
+
+interface CustomField {
+  id: number;
+  name: string;
+  value: string;
+}
+
+interface ProjectCreationState {
+  state: 'being_created' | 'completed';
+}
+
+interface ProjectDetails {
+  id: number;
+  name: string;
+  client: Client;
+  project_creation?: ProjectCreationState;
+  created_at: string;
+  updated_at: string;
+  authors: User[];
+  owners: User[];
+  custom_fields?: CustomField[];
+}
 
 export class DradisAPI {
   private apiToken: string;
@@ -41,16 +72,16 @@ export class DradisAPI {
     });
   }
 
-  async getVulnerability(projectId: number, vulnerabilityId: number): Promise<any> {
-    return this.request(`/pro/api/issues/${vulnerabilityId}`, {
+  async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
+    return this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
       },
     });
   }
 
-  async createVulnerability(projectId: number, vulnerability: Vulnerability): Promise<any> {
-    return this.request('/pro/api/issues', {
+  async createVulnerability(projectId: number, vulnerability: CreateVulnerabilityRequest): Promise<Vulnerability> {
+    return this.request<Vulnerability>('/pro/api/issues', {
       method: 'POST',
       headers: {
         'Dradis-Project-Id': projectId.toString(),
@@ -59,16 +90,17 @@ export class DradisAPI {
     });
   }
 
-  async getVulnerabilities(projectId: number): Promise<any[]> {
-    return this.request(`/pro/api/issues`, {
+  async getVulnerabilities(projectId: number, page?: number): Promise<VulnerabilityListItem[]> {
+    const url = page ? `/pro/api/issues?page=${page}` : '/pro/api/issues';
+    return this.request<VulnerabilityListItem[]>(url, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
       },
     });
   }
 
-  async updateVulnerability(projectId: number, issueId: number, vulnerability: Vulnerability): Promise<any> {
-    return this.request(`/pro/api/issues/${issueId}`, {
+  async updateVulnerability(projectId: number, issueId: number, vulnerability: CreateVulnerabilityRequest): Promise<Vulnerability> {
+    return this.request<Vulnerability>(`/pro/api/issues/${issueId}`, {
       method: 'PUT',
       headers: {
         'Dradis-Project-Id': projectId.toString(),
