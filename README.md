@@ -1,6 +1,6 @@
-# MCP Server Starter
+# Dradis Pro MCP Server
 
-A production-ready starter template for building Model Context Protocol (MCP) servers with TypeScript.
+A production-ready MCP server for managing vulnerability issues in Dradis Pro using TypeScript.
 
 ## 🚀 Quick Start
 
@@ -12,47 +12,29 @@ A production-ready starter template for building Model Context Protocol (MCP) se
 
 ## ✨ Key Features
 
-- Bun for fast testing and development
+- Comprehensive vulnerability issue management
+  - Create new vulnerability issues
+  - Update existing vulnerability findings
+  - Delete obsolete vulnerabilities
+  - Search and replace capabilities for scanner-specific content (Nessus, etc.)
+- Built with Bun for fast testing and development
 - Biome for linting and formatting
-- Automated version management with standard-version
+- Automated version management
 - Clean, maintainable project structure
 
 ## 📂 Project Structure
 
 ```
-mcp-starter/
+dradis-mcp/
 ├── src/
-│   ├── tools/          # MCP tools implementation
+│   ├── tools/          # Vulnerability management tools
 │   ├── utils/          # Shared utilities
 │   ├── main.ts         # Server entry point
-│   └── types.ts        # Shared type definitions
+│   └── types.ts        # Type definitions
 ├── tests/              # Test files
 ├── biome.json          # Linting configuration
 ├── tsconfig.json       # TypeScript configuration
 └── package.json        # Project dependencies
-```
-
-## ⚙️ Configuration
-
-### Creating New Tools
-
-The project includes a script to help create new MCP tools:
-
-```bash
-bun run scripts/create-tool.ts <tool-name>
-```
-
-This will:
-1. Create a new tool directory under `src/tools/<tool-name>`
-2. Generate the basic tool structure including:
-   - index.ts (main implementation)
-   - schema.ts (JSON schema for tool parameters)
-   - test.ts (test file)
-3. Update the tools index file to export the new tool
-
-Example:
-```bash
-bun run scripts/create-tool.ts weather
 ```
 
 ## 🛠️ Development
@@ -62,20 +44,19 @@ bun run scripts/create-tool.ts weather
 - **Lint code**: `bun run lint`
 - **Build project**: `bun run build`
 
-To add your development MCP server to Claude Desktop:
+To add your Dradis Pro MCP server to Claude Desktop:
 
 1. Build the project:
    ```bash
    bun run build
    ```
-2. Add to your Claude Desktop config:
+2. Add to your Claude Desktop configuration:
    ```json
-   // You only need the argument if you need to pass arguments to your server
    {
      "mcpServers": {
-       "your-server-name": {
+       "dradis-pro": {
          "command": "node",
-         "args": ["/path/to/your/project/dist/main.js", "some_argument"]
+         "args": ["/path/to/your/project/dist/main.js"]
        }
      }
    }
@@ -90,7 +71,7 @@ This project uses [standard-version](https://github.com/conventional-changelog/s
 - `fix`: Bug fix (bumps patch version)
 - `BREAKING CHANGE`: Breaking change (bumps major version)
 
-## 📦 Publishing to npm
+## 📦 Publishing
 
 1. Ensure you're logged in to npm:
    ```bash
@@ -104,18 +85,5 @@ This project uses [standard-version](https://github.com/conventional-changelog/s
    ```bash
    npm publish
    ```
+
 Remember to update the version number using `bun run release` before publishing new versions.
-
-## Installing from npm (after publishing)
-
-Add to your Claude Desktop config:
-```json
-// You only need the argument if you need to pass arguments to your server
-{
-  "mcpServers": {
-    "your-server-name": {
-      "command": "npx",
-      "args": ["-y", "your-package-name", "some_argument"]
-    }
-  }
-}
