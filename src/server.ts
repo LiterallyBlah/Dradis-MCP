@@ -7,7 +7,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
 import { DradisAPI } from './api.js';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema } from './types.js';
+import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema } from './types.js';
 import { loadConfig } from './config.js';
 import https from 'node:https';
 
@@ -81,7 +81,19 @@ server.addTool({
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const project = await api.createProject(args);
+    // If team_id wasn't provided in args, try to use the environment default
+    if (!args.team_id && config.DRADIS_DEFAULT_TEAM_ID) {
+      args.team_id = config.DRADIS_DEFAULT_TEAM_ID;
+    }
+
+    // Apply environment variable defaults for optional parameters
+    const projectData = {
+      ...args,
+      report_template_properties_id: args.report_template_properties_id ?? config.DRADIS_DEFAULT_TEMPLATE_ID,
+      template: args.template ?? config.DRADIS_DEFAULT_TEMPLATE,
+    };
+
+    const project = await api.createProject(projectData);
     state.projectId = project.id; // Automatically set as current project
     return formatResponse({ 
       message: `Project created successfully with ID ${project.id}`,
@@ -177,6 +189,46 @@ server.addTool({
       message: "Vulnerability updated successfully",
       vulnerability: result
     });
+  },
+});
+
+// Get Content Blocks Tool
+server.addTool({
+  name: "getContentBlocks",
+  description: "Get all content blocks in the current project",
+  parameters: z.object({}),
+  async execute(args) {
+    const { projectId } = state;
+    if (!projectId) {
+      throw new Error("No project selected. Please select a project first.");
+    }
+
+    const api = new DradisAPI(config);
+    const contentBlocks = await api.getContentBlocks(projectId);
+    return formatResponse(contentBlocks);
+  },
+});
+
+// Update Content Block Tool
+server.addTool({
+  name: "updateContentBlock",
+  description: "Update an existing content block in the current project",
+  parameters: z.object({
+    blockId: z.number().positive("Block ID must be positive"),
+    ...UpdateContentBlockSchema.shape,
+  }),
+  async execute(args) {
+    const { projectId } = state;
+    if (!projectId) {
+      throw new Error("No project selected. Please select a project first.");
+    }
+
+    const api = new DradisAPI(config);
+    const contentBlock = await api.updateContentBlock(projectId, args.blockId, {
+      content: args.content,
+      block_group: args.block_group,
+    });
+    return formatResponse(contentBlock);
   },
 });
 

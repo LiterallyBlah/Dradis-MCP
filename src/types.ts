@@ -83,6 +83,27 @@ export type VulnerabilityFields = z.infer<typeof VulnerabilityFieldsSchema>;
 export type Vulnerability = z.infer<typeof VulnerabilitySchema>;
 export type VulnerabilityListItem = z.infer<typeof VulnerabilityListItemSchema>;
 
+// Content Block Types
+export const ContentBlockFieldsSchema = z.record(z.string());
+
+export const ContentBlockSchema = z.object({
+  id: z.number(),
+  author: z.string(),
+  block_group: z.string(),
+  title: z.string(),
+  fields: ContentBlockFieldsSchema,
+  content: z.string(),
+});
+
+export const UpdateContentBlockSchema = z.object({
+  content: z.string(),
+  block_group: z.string(),
+});
+
+export type ContentBlockFields = z.infer<typeof ContentBlockFieldsSchema>;
+export type ContentBlock = z.infer<typeof ContentBlockSchema>;
+export type UpdateContentBlock = z.infer<typeof UpdateContentBlockSchema>;
+
 // Server State Types
 export interface ServerState {
   projectId?: number;

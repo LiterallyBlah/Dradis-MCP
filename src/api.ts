@@ -4,6 +4,8 @@ import {
   CreateVulnerabilityRequest, 
   VulnerabilityListItem,
   ProjectDetails,
+  ContentBlock,
+  UpdateContentBlock,
 } from './types.js';
 import { Config } from './config.js';
 
@@ -98,6 +100,17 @@ export class DradisAPI {
         'Dradis-Project-Id': projectId.toString(),
       },
       body: JSON.stringify({ issue: vulnerability }),
+    });
+  }
+
+  async getContentBlocks(projectId: number): Promise<ContentBlock[]> {
+    return this.request<ContentBlock[]>(`/pro/api/content_blocks?project_id=${projectId}`);
+  }
+
+  async updateContentBlock(projectId: number, blockId: number, contentBlock: UpdateContentBlock): Promise<ContentBlock> {
+    return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}?project_id=${projectId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content_block: contentBlock }),
     });
   }
 }

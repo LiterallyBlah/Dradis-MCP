@@ -42,19 +42,21 @@ DRADIS_API_TOKEN=your-api-token
 
 ### MCP Config File
 
-To add Dradis MCP to your MCP configuration, add the following to your config file:
+To add Dradis MCP to your MCP configuration, add the following to your config file to mcp.json if you're using 5ire:
 
 ```json
 {
-  "mcps": [
+  "servers": [
     {
       "key": "Dradis",
       "command": "npx",
       "description": "A Model Context Protocol server that provides integration with Dradis note-taking platform",
-      "args": ["-y", "dradis-mcp"],
+      "args": ["-y", "/Location/On/Computer/Dradis-MCP"],
       "env": {
         "DRADIS_URL": "<url:string:Your Dradis instance URL>",
-        "DRADIS_API_TOKEN": "<token:string:Your Dradis API token>"
+        "DRADIS_API_TOKEN": "<token:string:Your Dradis API token>",
+        "DRADIS_DEFAULT_TEAM_ID": "<number:string:Default team ID for project creation>",
+        "DRADIS_DEFAULT_TEMPLATE_ID": "<number:string:Default template ID for project creation>"
       },
       "isActive": false
     }
