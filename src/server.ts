@@ -7,7 +7,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
 import { DradisAPI } from './api.js';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema } from './types.js';
+import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, UpdateDocumentPropertySchema } from './types.js';
 import { loadConfig } from './config.js';
 import https from 'node:https';
 
@@ -212,23 +212,60 @@ server.addTool({
 // Update Content Block Tool
 server.addTool({
   name: "updateContentBlock",
-  description: "Update an existing content block in the current project. Specifically, the 'content' field.",
+  description: "Update a content block in the current project",
   parameters: z.object({
     blockId: z.number().positive("Block ID must be positive"),
-    ...UpdateContentBlockSchema.shape,
+    contentBlock: UpdateContentBlockSchema,
   }),
-  async execute(args) {
-    const { projectId } = state;
-    if (!projectId) {
-      throw new Error("No project selected. Please select a project first.");
+  execute: async (args) => {
+    if (!state.projectId) {
+      throw new UserError("No project ID set. Use setProject or createProject first.");
+    }
+    if (!api) {
+      throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const api = new DradisAPI(config);
-    const contentBlock = await api.updateContentBlock(projectId, args.blockId, {
-      content: args.content,
-      block_group: args.block_group,
-    });
-    return formatResponse(contentBlock);
+    const block = await api.updateContentBlock(state.projectId, args.blockId, args.contentBlock);
+    return formatResponse(block);
+  },
+});
+
+// Get Document Properties Tool
+server.addTool({
+  name: "getDocumentProperties",
+  description: "Get all document properties for the current project",
+  parameters: z.object({}),
+  execute: async () => {
+    if (!state.projectId) {
+      throw new UserError("No project ID set. Use setProject or createProject first.");
+    }
+    if (!api) {
+      throw new UserError("API not initialized. Check your configuration.");
+    }
+
+    const properties = await api.getDocumentProperties(state.projectId);
+    return formatResponse(properties);
+  },
+});
+
+// Update Document Property Tool
+server.addTool({
+  name: "updateDocumentProperty",
+  description: "Update a document property in the current project",
+  parameters: z.object({
+    propertyName: z.string(),
+    update: UpdateDocumentPropertySchema,
+  }),
+  execute: async (args) => {
+    if (!state.projectId) {
+      throw new UserError("No project ID set. Use setProject or createProject first.");
+    }
+    if (!api) {
+      throw new UserError("API not initialized. Check your configuration.");
+    }
+
+    const property = await api.updateDocumentProperty(state.projectId, args.propertyName, args.update);
+    return formatResponse(property);
   },
 });
 

@@ -6,6 +6,8 @@ import {
   ProjectDetails,
   ContentBlock,
   UpdateContentBlock,
+  DocumentProperty,
+  UpdateDocumentProperty,
 } from './types.js';
 import { Config } from './config.js';
 
@@ -125,6 +127,24 @@ export class DradisAPI {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ content_block: contentBlock }),
+    });
+  }
+
+  async getDocumentProperties(projectId: number): Promise<DocumentProperty[]> {
+    return this.request<DocumentProperty[]>('/pro/api/document_properties', {
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+    });
+  }
+
+  async updateDocumentProperty(projectId: number, propertyName: string, update: UpdateDocumentProperty): Promise<DocumentProperty> {
+    return this.request<DocumentProperty>(`/pro/api/document_properties/${propertyName}`, {
+      method: 'PUT',
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+      body: JSON.stringify({ document_property: update }),
     });
   }
 }

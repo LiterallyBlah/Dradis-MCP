@@ -111,6 +111,15 @@ export type ContentBlock = z.infer<typeof ContentBlockSchema>;
 export type SimpleContentBlock = z.infer<typeof SimpleContentBlockSchema>;
 export type UpdateContentBlock = z.infer<typeof UpdateContentBlockSchema>;
 
+// Document Property Types
+export const DocumentPropertySchema = z.record(z.string());
+export type DocumentProperty = z.infer<typeof DocumentPropertySchema>;
+
+export const UpdateDocumentPropertySchema = z.object({
+  value: z.string(),
+});
+export type UpdateDocumentProperty = z.infer<typeof UpdateDocumentPropertySchema>;
+
 // Server State Types
 export interface ServerState {
   projectId?: number;
