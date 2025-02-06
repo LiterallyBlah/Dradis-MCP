@@ -7,7 +7,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
 import { DradisAPI } from './api.js';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, UpdateDocumentPropertySchema } from './types.js';
+import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema } from './types.js';
 import { loadConfig } from './config.js';
 import https from 'node:https';
 
@@ -254,7 +254,7 @@ server.addTool({
   description: "Update a document property in the current project",
   parameters: z.object({
     propertyName: z.string(),
-    update: UpdateDocumentPropertySchema,
+    update: z.string(),
   }),
   execute: async (args) => {
     if (!state.projectId) {
