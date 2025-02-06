@@ -115,7 +115,8 @@ export type UpdateContentBlock = z.infer<typeof UpdateContentBlockSchema>;
 export const DocumentPropertySchema = z.record(z.string());
 export type DocumentProperty = z.infer<typeof DocumentPropertySchema>;
 
-// Removing UpdateDocumentPropertySchema and UpdateDocumentProperty type as we're simplifying to use string directly
+export const CreateDocumentPropertiesSchema = z.record(z.string());
+export type CreateDocumentProperties = z.infer<typeof CreateDocumentPropertiesSchema>;
 
 // Server State Types
 export interface ServerState {

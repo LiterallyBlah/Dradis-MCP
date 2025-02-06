@@ -7,7 +7,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
 import { DradisAPI } from './api.js';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema } from './types.js';
+import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, CreateDocumentPropertiesSchema } from './types.js';
 import { loadConfig } from './config.js';
 import https from 'node:https';
 
@@ -266,6 +266,26 @@ server.addTool({
 
     const property = await api.updateDocumentProperty(state.projectId, args.propertyName, args.value);
     return formatResponse(property);
+  },
+});
+
+// Create Document Properties Tool
+server.addTool({
+  name: "createDocumentProperties",
+  description: "Create multiple document properties in the current project",
+  parameters: z.object({
+    properties: CreateDocumentPropertiesSchema,
+  }),
+  execute: async (args) => {
+    if (!state.projectId) {
+      throw new UserError("No project ID set. Use setProject or createProject first.");
+    }
+    if (!api) {
+      throw new UserError("API not initialized. Check your configuration.");
+    }
+
+    const properties = await api.createDocumentProperties(state.projectId, args.properties);
+    return formatResponse(properties);
   },
 });
 

@@ -7,6 +7,7 @@ import {
   ContentBlock,
   UpdateContentBlock,
   DocumentProperty,
+  CreateDocumentProperties,
 } from './types.js';
 import { Config } from './config.js';
 
@@ -148,6 +149,19 @@ export class DradisAPI {
         document_property: {
           value: value
         }
+      }),
+    });
+  }
+
+  async createDocumentProperties(projectId: number, properties: CreateDocumentProperties): Promise<DocumentProperty[]> {
+    return this.request<DocumentProperty[]>('/pro/api/document_properties', {
+      method: 'POST',
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        document_properties: properties
       }),
     });
   }
