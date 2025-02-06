@@ -115,7 +115,9 @@ export type UpdateContentBlock = z.infer<typeof UpdateContentBlockSchema>;
 export const DocumentPropertySchema = z.record(z.string());
 export type DocumentProperty = z.infer<typeof DocumentPropertySchema>;
 
-export const CreateDocumentPropertiesSchema = z.record(z.string());
+// Schema for creating document properties, expects an object with property names as keys and their values as strings
+// Example: { "dradis.client": "ACME Ltd.", "dradis.project": "Test Project" }
+export const CreateDocumentPropertiesSchema = z.record(z.string()).describe('An object mapping property names to their values');
 export type CreateDocumentProperties = z.infer<typeof CreateDocumentPropertiesSchema>;
 
 // Server State Types

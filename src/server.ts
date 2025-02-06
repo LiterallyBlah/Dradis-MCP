@@ -272,9 +272,9 @@ server.addTool({
 // Create Document Properties Tool
 server.addTool({
   name: "createDocumentProperties",
-  description: "Create multiple document properties in the current project",
+  description: "Create multiple document properties in the current project. Each property should be a key-value pair where the key is the property name (e.g. 'dradis.client') and the value is the property value (e.g. 'ACME Ltd.'). Example: { 'dradis.client': 'ACME Ltd.', 'dradis.project': 'Test Project' }",
   parameters: z.object({
-    properties: CreateDocumentPropertiesSchema,
+    properties: z.record(z.string(), z.string()).describe('An object containing key-value pairs of property names and their values. Example: { "dradis.client": "ACME Ltd." }'),
   }),
   execute: async (args) => {
     if (!state.projectId) {
