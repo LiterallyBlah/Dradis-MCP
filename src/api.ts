@@ -144,7 +144,11 @@ export class DradisAPI {
         'Dradis-Project-Id': projectId.toString(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ document_property: { value } }),
+      body: JSON.stringify({
+        'document_property': {
+          'value': value
+        }
+      }),
     });
   }
 }
