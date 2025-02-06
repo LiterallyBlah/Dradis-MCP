@@ -145,8 +145,8 @@ export class DradisAPI {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        'document_property': {
-          'value': value
+        document_property: {
+          value: value
         }
       }),
     });

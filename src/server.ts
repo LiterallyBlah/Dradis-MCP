@@ -254,7 +254,7 @@ server.addTool({
   description: "Update a document property in the current project",
   parameters: z.object({
     propertyName: z.string(),
-    update: z.string(),
+    value: z.string(),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -264,7 +264,7 @@ server.addTool({
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const property = await api.updateDocumentProperty(state.projectId, args.propertyName, args.update);
+    const property = await api.updateDocumentProperty(state.projectId, args.propertyName, args.value);
     return formatResponse(property);
   },
 });
