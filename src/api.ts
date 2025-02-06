@@ -143,6 +143,7 @@ export class DradisAPI {
       method: 'PUT',
       headers: {
         'Dradis-Project-Id': projectId.toString(),
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ document_property: update }),
     });
