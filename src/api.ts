@@ -104,7 +104,11 @@ export class DradisAPI {
   }
 
   async getContentBlocks(projectId: number): Promise<ContentBlock[]> {
-    return this.request<ContentBlock[]>(`/pro/api/content_blocks?project_id=${projectId}`);
+    return this.request<ContentBlock[]>(`/pro/api/content_blocks`, {
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+    });
   }
 
   async updateContentBlock(projectId: number, blockId: number, contentBlock: UpdateContentBlock): Promise<ContentBlock> {

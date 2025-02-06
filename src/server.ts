@@ -212,7 +212,7 @@ server.addTool({
 // Update Content Block Tool
 server.addTool({
   name: "updateContentBlock",
-  description: "Update an existing content block in the current project",
+  description: "Update an existing content block in the current project. Specifically, the 'content' field.",
   parameters: z.object({
     blockId: z.number().positive("Block ID must be positive"),
     ...UpdateContentBlockSchema.shape,
