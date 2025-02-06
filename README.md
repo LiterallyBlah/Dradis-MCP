@@ -51,7 +51,7 @@ To add Dradis MCP to your MCP configuration, add the following to your config fi
       "key": "Dradis",
       "command": "npx",
       "description": "A Model Context Protocol server that provides integration with Dradis note-taking platform",
-      "args": ["-y", "/Location/On/Computer/Dradis-MCP"],
+      "args": ["-y", "dradis-mcp"],
       "env": {
         "DRADIS_URL": "<url:string:Your Dradis instance URL>",
         "DRADIS_API_TOKEN": "<token:string:Your Dradis API token>",
