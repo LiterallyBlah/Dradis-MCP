@@ -95,6 +95,12 @@ export const ContentBlockSchema = z.object({
   content: z.string(),
 });
 
+export const SimpleContentBlockSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  content: z.string(),
+});
+
 export const UpdateContentBlockSchema = z.object({
   content: z.string(),
   block_group: z.string(),
@@ -102,6 +108,7 @@ export const UpdateContentBlockSchema = z.object({
 
 export type ContentBlockFields = z.infer<typeof ContentBlockFieldsSchema>;
 export type ContentBlock = z.infer<typeof ContentBlockSchema>;
+export type SimpleContentBlock = z.infer<typeof SimpleContentBlockSchema>;
 export type UpdateContentBlock = z.infer<typeof UpdateContentBlockSchema>;
 
 // Server State Types

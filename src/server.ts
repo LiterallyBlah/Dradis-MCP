@@ -232,6 +232,29 @@ server.addTool({
   },
 });
 
-server.start({
-  transportType: "stdio",
-});
+// Test API connection before starting server
+async function testConnection() {
+  try {
+    console.log("Testing API connection...");
+    const project = await api.getProjectDetails(1);
+    console.log("API connection successful!");
+    return true;
+  } catch (error) {
+    console.error("API connection failed:", error);
+    return false;
+  }
+}
+
+// Modify server start to include connection test
+(async () => {
+  try {
+    const connected = await testConnection();
+    if (connected) {
+      server.start({
+        transportType: "stdio",
+      });
+    }
+  } catch (error) {
+    console.error("Failed to start server:", error);
+  }
+})();

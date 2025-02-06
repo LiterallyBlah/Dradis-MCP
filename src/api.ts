@@ -103,17 +103,27 @@ export class DradisAPI {
     });
   }
 
-  async getContentBlocks(projectId: number): Promise<ContentBlock[]> {
-    return this.request<ContentBlock[]>(`/pro/api/content_blocks`, {
+  async getContentBlocks(projectId: number): Promise<{ id: number; title: string; content: string }[]> {
+    const blocks = await this.request<ContentBlock[]>(`/pro/api/content_blocks`, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
       },
     });
+    
+    return blocks.map(block => ({
+      id: block.id,
+      title: block.title,
+      content: block.content
+    }));
   }
 
   async updateContentBlock(projectId: number, blockId: number, contentBlock: UpdateContentBlock): Promise<ContentBlock> {
-    return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}?project_id=${projectId}`, {
+    return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}`, {
       method: 'PUT',
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ content_block: contentBlock }),
     });
   }
