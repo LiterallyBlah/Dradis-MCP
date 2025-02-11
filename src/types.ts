@@ -77,6 +77,9 @@ export const VulnerabilitySchema = z.object({
 export const VulnerabilityListItemSchema = z.object({
   id: z.number(),
   title: z.string(),
+  fields: z.object({
+    Rating: z.string(),
+  }),
 });
 
 export type VulnerabilityFields = z.infer<typeof VulnerabilityFieldsSchema>;

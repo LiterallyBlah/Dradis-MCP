@@ -88,11 +88,19 @@ export class DradisAPI {
 
   async getVulnerabilities(projectId: number, page?: number): Promise<VulnerabilityListItem[]> {
     const url = page ? `/pro/api/issues?page=${page}` : '/pro/api/issues';
-    return this.request<VulnerabilityListItem[]>(url, {
+    const response = this.request<Vulnerability[]>(url, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
       },
     });
+  
+    return (await response).map((vulnerability: Vulnerability) => ({
+      id: vulnerability.id,
+      title: vulnerability.title,
+      fields: {
+        Rating: vulnerability.fields.Rating,
+      },
+    }));
   }
 
   async updateVulnerability(projectId: number, issueId: number, vulnerability: CreateVulnerabilityRequest): Promise<Vulnerability> {
