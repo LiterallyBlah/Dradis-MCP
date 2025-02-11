@@ -57,6 +57,14 @@ export class DradisAPI {
     }
   }
 
+  private ConstructDradisResponse(data: any): string {
+    let construction: string ='';
+    Object.keys(data).forEach((key) => {
+      construction += `#[${key}]#\r\n${data[key]}\r\n\r\n`;
+    });
+    return construction;
+  } 
+
   async getProjectDetails(projectId: number): Promise<ProjectDetails> {
     return this.request<ProjectDetails>(`/pro/api/projects/${projectId}`);
   }
@@ -65,24 +73,6 @@ export class DradisAPI {
     return this.request<ProjectDetails>('/pro/api/projects', {
       method: 'POST',
       body: JSON.stringify({ project }),
-    });
-  }
-
-  async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
-    return this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
-      headers: {
-        'Dradis-Project-Id': projectId.toString(),
-      },
-    });
-  }
-
-  async createVulnerability(projectId: number, vulnerability: CreateVulnerabilityRequest): Promise<Vulnerability> {
-    return this.request<Vulnerability>('/pro/api/issues', {
-      method: 'POST',
-      headers: {
-        'Dradis-Project-Id': projectId.toString(),
-      },
-      body: JSON.stringify({ issue: vulnerability }),
     });
   }
 
@@ -101,6 +91,25 @@ export class DradisAPI {
         Rating: vulnerability.fields.Rating,
       },
     }));
+  }
+
+  async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
+    return this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+    });
+  }
+
+  async createVulnerability(projectId: number, vulnerability: any): Promise<Vulnerability> {
+    const compiledVulnerability = this.ConstructDradisResponse(vulnerability);
+    return this.request<Vulnerability>('/pro/api/issues', {
+      method: 'POST',
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+      body: JSON.stringify({ issue: { text: compiledVulnerability } }),
+    });
   }
 
   async updateVulnerability(projectId: number, issueId: number, vulnerability: CreateVulnerabilityRequest): Promise<Vulnerability> {

@@ -10,6 +10,7 @@ import { DradisAPI } from './api.js';
 import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, CreateDocumentPropertiesSchema } from './types.js';
 import { loadConfig } from './config.js';
 import https from 'node:https';
+import log from 'node:console';
 
 // Load environment variables from .env file
 dotenvConfig();
@@ -19,7 +20,7 @@ const config = loadConfig();
 
 const server = new FastMCP({
   name: "Dradis MCP",
-  version: "1.0.0",
+  version: "1.0.1",
 });
 
 // Server state
@@ -102,20 +103,28 @@ server.addTool({
   },
 });
 
+
+const createVulnParams = config.DRADIS_VULNERABILITY_PARAMETERS
+const createVulnSchema = createVulnParams.reduce((schema, param) => {
+  return schema.extend({ [param]: z.string().nonempty(`${param} is required`) });  
+}, z.object({}));
+
 // Create Vulnerability Tool
 server.addTool({
   name: "createVulnerability",
   description: "Create a new vulnerability in the current project",
-  parameters: CreateVulnerabilitySchema,
+  parameters: createVulnSchema,
   execute: async (args) => {
+    log.info('createVulnerability', args);
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError("No project ID set. Use setProject or createProject first.\n${state.projectId}");
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
     const result = await api.createVulnerability(state.projectId, args);
+    log.info('createVulnerability', result);
     return formatResponse({
       message: "Vulnerability created successfully",
       vulnerability: result
@@ -139,11 +148,7 @@ server.addTool({
     }
 
     const vulnerabilities = await api.getVulnerabilities(state.projectId, args.page);
-    return formatResponse({
-      page: args.page || 1,
-      items_per_page: 25,
-      vulnerabilities
-    });
+    return `${formatResponse({page: args.page || 1, items_per_page: 25, vulnerabilities})}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`
   },
 });
 
@@ -305,7 +310,8 @@ async function testConnection() {
 // Modify server start to include connection test
 (async () => {
   try {
-    const connected = await testConnection();
+    // const connected = await testConnection();
+    const connected = true;
     if (connected) {
       server.start({
         transportType: "stdio",

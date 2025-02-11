@@ -6,6 +6,7 @@ const ConfigSchema = z.object({
   DRADIS_DEFAULT_TEAM_ID: z.string().transform(Number).optional(),
   DRADIS_DEFAULT_TEMPLATE_ID: z.string().transform(Number).optional(),
   DRADIS_DEFAULT_TEMPLATE: z.string().optional(),
+  DRADIS_VULNERABILITY_PARAMETERS: z.string().optional().transform(val => val ? val.split(',') : []),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -17,6 +18,7 @@ export function loadConfig(): Config {
     DRADIS_DEFAULT_TEAM_ID: process.env.DRADIS_DEFAULT_TEAM_ID,
     DRADIS_DEFAULT_TEMPLATE_ID: process.env.DRADIS_DEFAULT_TEMPLATE_ID,
     DRADIS_DEFAULT_TEMPLATE: process.env.DRADIS_DEFAULT_TEMPLATE,
+    DRADIS_VULNERABILITY_PARAMETERS: process.env.DRADIS_VULNERABILITY_PARAMETERS,
   };
 
   try {
