@@ -60,28 +60,21 @@ export const CreateVulnerabilitySchema = createVulnParams.reduce((schema, param)
 
 export type CreateVulnerabilityRequest = z.infer<typeof CreateVulnerabilitySchema>;
 
-export const VulnerabilityFieldsSchema = z.object({
-  Title: z.string(),
-  Rating: z.string(),
-  Description: z.string(),
-  Mitigation: z.string(),
-  References: z.string(),
-  Test: z.string(),
+export const VulnerabilitySchemaDefault = z.object({
+  id: z.number(),
+  author: z.string(),
+  title: z.string(),
+  fields: z.any(),
+  text: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
-// export const VulnerabilitySchema = z.object({
-//   id: z.number(),
-//   author: z.string(),
-//   title: z.string(),
-//   fields: VulnerabilityFieldsSchema,
-//   text: z.string(),
-//   created_at: z.string(),
-//   updated_at: z.string(),
-// });
+export const VulnerabilitySchema = createVulnParams.reduce<z.ZodObject<any>>(
+  (schema, param) => schema.extend({ [param]: z.string().optional() }),
+  VulnerabilitySchemaDefault
+);
 
-export const VulnerabilitySchema = createVulnParams.reduce((schema, param) => {
-  return schema.extend({ [param]: z.string().describe(`${param} is optional`).optional() });  
-}, z.object({}));
 
 export const VulnerabilityListItemSchema = z.object({
   id: z.number(),
@@ -91,7 +84,7 @@ export const VulnerabilityListItemSchema = z.object({
   }),
 });
 
-export type VulnerabilityFields = z.infer<typeof VulnerabilityFieldsSchema>;
+
 export type Vulnerability = z.infer<typeof VulnerabilitySchema>;
 export type VulnerabilityListItem = z.infer<typeof VulnerabilityListItemSchema>;
 

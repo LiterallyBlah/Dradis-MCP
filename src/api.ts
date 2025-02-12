@@ -94,13 +94,25 @@ export class DradisAPI {
   }
 
   async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
-    const request = this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
+    const response = await this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
       },
-    });
-    return 
+    }); 
+  
+    let construction: any = { 
+      id: response.id,
+      author: response.author,
+      title: response.title,
+    };
+  
+    for (const key in response.fields) {
+      construction[key] = response.fields[key];
+    }
+  
+    return construction;
   }
+  
 
   async createVulnerability(projectId: number, vulnerability: any): Promise<Vulnerability> {
     const compiledVulnerability = this.ConstructDradisResponse(vulnerability);
