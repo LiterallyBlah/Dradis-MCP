@@ -104,16 +104,13 @@ server.addTool({
 });
 
 
-const createVulnParams = config.DRADIS_VULNERABILITY_PARAMETERS
-const createVulnSchema = createVulnParams.reduce((schema, param) => {
-  return schema.extend({ [param]: z.string().nonempty(`${param} is required`) });  
-}, z.object({}));
+
 
 // Create Vulnerability Tool
 server.addTool({
   name: "createVulnerability",
   description: "Create a new vulnerability in the current project",
-  parameters: createVulnSchema,
+  parameters: CreateVulnerabilitySchema,
   execute: async (args) => {
     log.info('createVulnerability', args);
     if (!state.projectId) {

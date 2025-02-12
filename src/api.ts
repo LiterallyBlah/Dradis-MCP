@@ -94,11 +94,12 @@ export class DradisAPI {
   }
 
   async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
-    return this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
+    const request = this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
       },
     });
+    return 
   }
 
   async createVulnerability(projectId: number, vulnerability: any): Promise<Vulnerability> {
