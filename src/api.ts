@@ -8,6 +8,7 @@ import {
   UpdateContentBlock,
   DocumentProperty,
   CreateDocumentProperties,
+  UpdateVulnerabilityRequest,
 } from './types.js';
 import { Config } from './config.js';
 
@@ -103,7 +104,6 @@ export class DradisAPI {
     let construction: any = { 
       id: response.id,
       author: response.author,
-      title: response.title,
     };
   
     for (const key in response.fields) {
@@ -125,15 +125,36 @@ export class DradisAPI {
     });
   }
 
-  async updateVulnerability(projectId: number, issueId: number, vulnerability: CreateVulnerabilityRequest): Promise<Vulnerability> {
-    return this.request<Vulnerability>(`/pro/api/issues/${issueId}`, {
-      method: 'PUT',
-      headers: {
-        'Dradis-Project-Id': projectId.toString(),
-      },
-      body: JSON.stringify({ issue: vulnerability }),
-    });
+  async updateVulnerability(
+    projectId: number,
+    issueId: number,
+    vulnerability: UpdateVulnerabilityRequest
+  ): Promise<Vulnerability> {
+      let getVulnerability = await this.getVulnerability(projectId, issueId);
+      
+      // Clone the fetched vulnerability to avoid mutation
+      const updatedVulnerability: Vulnerability = { ...getVulnerability };
+  
+      // Ensure only defined string properties are updated
+      Object.entries(vulnerability).forEach(([key, value]) => {
+          if (typeof value === "string" && value.trim() !== "") {
+              updatedVulnerability[key] = value;
+          }
+      });
+  
+      const dradisConstruct = this.ConstructDradisResponse(updatedVulnerability);
+  
+      return this.request<Vulnerability>(`/pro/api/issues/${issueId}`, {
+          method: 'PUT',
+          headers: {
+              'Dradis-Project-Id': projectId.toString(),
+          },
+          body: JSON.stringify({ issue: { text: dradisConstruct } }),
+      });
   }
+  
+  
+
 
   async getContentBlocks(projectId: number): Promise<{ id: number; title: string; content: string }[]> {
     const blocks = await this.request<ContentBlock[]>(`/pro/api/content_blocks`, {

@@ -7,7 +7,7 @@ import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
 import { DradisAPI } from './api.js';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, CreateDocumentPropertiesSchema } from './types.js';
+import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, CreateDocumentPropertiesSchema, UpdateVulnerabilitySchema } from './types.js';
 import { loadConfig } from './config.js';
 import https from 'node:https';
 import log from 'node:console';
@@ -175,7 +175,7 @@ server.addTool({
   description: "Update an existing vulnerability",
   parameters: z.object({
     issueId: z.number().positive("Issue ID must be positive"),
-    ...CreateVulnerabilitySchema.shape,
+    parameters: UpdateVulnerabilitySchema,
   }),
   execute: async (args) => {
     if (!state.projectId) {

@@ -60,6 +60,12 @@ export const CreateVulnerabilitySchema = createVulnParams.reduce((schema, param)
 
 export type CreateVulnerabilityRequest = z.infer<typeof CreateVulnerabilitySchema>;
 
+export const UpdateVulnerabilitySchema = createVulnParams.reduce((schema, param) => {
+  return schema.extend({ [param]: z.string().optional() });  
+}, z.object({}));
+
+export type UpdateVulnerabilityRequest = z.infer<typeof CreateVulnerabilitySchema>;
+
 export const VulnerabilitySchemaDefault = z.object({
   id: z.number(),
   author: z.string(),
