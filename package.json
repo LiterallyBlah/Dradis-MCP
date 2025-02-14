@@ -1,6 +1,6 @@
 {
   "name": "dradis-mcp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A FastMCP server for Dradis",
   "main": "dist/server.js",
   "type": "module",

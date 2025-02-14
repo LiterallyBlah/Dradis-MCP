@@ -20,7 +20,7 @@ const config = loadConfig();
 
 const server = new FastMCP({
   name: "Dradis MCP",
-  version: "2.0.0",
+  version: "2.1.0",
 });
 
 // Server state
@@ -145,6 +145,26 @@ server.addTool({
     }
 
     const vulnerabilities = await api.getVulnerabilities(state.projectId, args.page);
+    return `${formatResponse({page: args.page || 1, items_per_page: 25, vulnerabilities})}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`
+  },
+});
+
+// Get All Vulnerability Details Tool
+server.addTool({
+  name: "getAllVulnerabilityDetails",
+  description: "Get list of all vulnerability details in the current project. Returns 10 items per page.",
+  parameters: z.object({
+    page: z.number().positive("Page number must be positive").optional().describe("Optional page number for pagination"),
+  }),
+  execute: async (args) => {
+    if (!state.projectId) {
+      throw new UserError("No project ID set. Use setProject or createProject first.");
+    }
+    if (!api) {
+      throw new UserError("API not initialized. Check your configuration.");
+    }
+
+    const vulnerabilities = await api.getAllVulnerabilityDetails(state.projectId, args.page);
     return `${formatResponse({page: args.page || 1, items_per_page: 25, vulnerabilities})}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`
   },
 });

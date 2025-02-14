@@ -97,6 +97,21 @@ export class DradisAPI {
     }));
   }
 
+  async getAllVulnerabilityDetails(projectId: number, page?: number): Promise<VulnerabilityListItem[]> {
+    const url = page ? `/pro/api/issues?page=${page}` : '/pro/api/issues';
+    const response = this.request<Vulnerability[]>(url, {
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+    });
+  
+    return (await response).map((vulnerability: Vulnerability) => ({
+      id: vulnerability.id,
+      title: vulnerability.title,
+      fields: vulnerability.fields
+    }));
+  }
+
   async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
     const response = await this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
       headers: {

@@ -12,6 +12,7 @@ A FastMCP server implementation for interacting with Dradis Pro, a collaborative
   - Create vulnerabilities
   - Update existing vulnerabilities
   - Get vulnerability details
+  - Get all vulnerability details
   - List vulnerabilities with pagination support
 - Content Block Management
   - Get all content blocks in current project
