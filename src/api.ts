@@ -9,8 +9,11 @@ import {
   DocumentProperty,
   CreateDocumentProperties,
   UpdateVulnerabilityRequest,
+  ContentBlockSchema,
 } from './types.js';
 import { Config } from './config.js';
+import * as fs from 'fs';
+import { UnexpectedStateError } from 'fastmcp';
 
 export class DradisAPI {
   private apiToken: string;
@@ -137,7 +140,7 @@ export class DradisAPI {
   
       // Ensure only defined string properties are updated
       Object.entries(vulnerability).forEach(([key, value]) => {
-          if (typeof value === "string" && value.trim() !== "") {
+          if (typeof value === "string" && value.trim() !== "" || value != undefined) {
               updatedVulnerability[key] = value;
           }
       });
@@ -156,7 +159,7 @@ export class DradisAPI {
   
 
 
-  async getContentBlocks(projectId: number): Promise<{ id: number; title: string; content: string }[]> {
+  async getContentBlocks(projectId: number): Promise<{ id: number; fields: object }[]> {
     const blocks = await this.request<ContentBlock[]>(`/pro/api/content_blocks`, {
       headers: {
         'Dradis-Project-Id': projectId.toString(),
@@ -165,19 +168,42 @@ export class DradisAPI {
     
     return blocks.map(block => ({
       id: block.id,
-      title: block.title,
-      content: block.content
+      fields: block.fields
     }));
   }
 
+  async getContentBlock(projectId: number, blockId: number): Promise<ContentBlock> {
+    return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}`, {
+      headers: {
+        'Dradis-Project-Id': projectId.toString(),
+      },
+    });
+  }
+
   async updateContentBlock(projectId: number, blockId: number, contentBlock: UpdateContentBlock): Promise<ContentBlock> {
+    const contentBlockInfo = await this.getContentBlock(projectId, blockId)
+
+    const content = (typeof contentBlock.content === 'object' && contentBlock.content !== null) ? Object.fromEntries(
+        Object.entries(contentBlock.content).filter(
+          ([, value]) => typeof value === 'string'
+        )
+      )
+    : {};
+
+    for (const key in contentBlock.content) {
+      if (Object.prototype.hasOwnProperty.call(contentBlock.content, key)) {
+        contentBlockInfo.fields[key] = (contentBlock.content as Record<string, string>)[key];
+      }
+    }    
+    
+    const dradisConstruct = await this.ConstructDradisResponse(contentBlockInfo.fields)
     return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}`, {
       method: 'PUT',
       headers: {
         'Dradis-Project-Id': projectId.toString(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content_block: contentBlock }),
+      body: JSON.stringify({ content_block: {block_group: contentBlock.block_group, content: dradisConstruct} }),
     });
   }
 
@@ -189,30 +215,30 @@ export class DradisAPI {
     });
   }
 
-  async updateDocumentProperty(projectId: number, propertyName: string, value: string): Promise<DocumentProperty> {
-    return this.request<DocumentProperty>(`/pro/api/document_properties/${propertyName}`, {
-      method: 'PUT',
-      headers: {
-        'Dradis-Project-Id': projectId.toString(),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        document_property: {
-          value: value
-        }
-      }),
-    });
-  }
-
-  async createDocumentProperties(projectId: number, properties: CreateDocumentProperties): Promise<DocumentProperty[]> {
-    return this.request<DocumentProperty[]>('/pro/api/document_properties', {
+  async upsertDocumentProperty(projectId: number, propertyName: string, value: string): Promise<DocumentProperty> {
+    const docProperties = await this.getDocumentProperties(projectId)
+    if (docProperties.some(property => propertyName in property && property[propertyName] !== undefined && property[propertyName] !== null)) {
+      return this.request<DocumentProperty>(`/pro/api/document_properties/${propertyName}`, {
+        method: 'PUT',
+        headers: {
+          'Dradis-Project-Id': projectId.toString(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          document_property: {
+            value: value
+          }
+        }),
+      });
+      }
+    return this.request<DocumentProperty>('/pro/api/document_properties', {
       method: 'POST',
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
-        'Content-Type': 'application/json',
+      'Dradis-Project-Id': projectId.toString(),
+      'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        document_properties: properties
+      document_properties: { [propertyName]: value }
       }),
     });
   }

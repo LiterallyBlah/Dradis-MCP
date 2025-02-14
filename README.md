@@ -13,6 +13,12 @@ A FastMCP server implementation for interacting with Dradis Pro, a collaborative
   - Update existing vulnerabilities
   - Get vulnerability details
   - List vulnerabilities with pagination support
+- Content Block Management
+  - Get all content blocks in current project
+  - Update a content block
+- Document Property Management
+  - Get all document properties
+  - Create or update a document property
 - Robust error handling and input validation
 - Consistent JSON response formatting
 
@@ -36,8 +42,11 @@ npm install
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-DRADIS_URL=https://your-dradis-instance.com
-DRADIS_API_TOKEN=your-api-token
+DRADIS_URL=<url>
+DRADIS_API_TOKEN=<token>
+DRADIS_DEFAULT_TEAM_ID=<teamId>
+DRADIS_DEFAULT_TEMPLATE_ID=<templateId>
+DRADIS_VULNERABILITY_PARAMETERS=<commaSeparatedParams> // Title,Description,Solution,etc. 
 ```
 
 ### MCP Config File
@@ -82,10 +91,10 @@ To add Dradis MCP to your MCP configuration, add the following to your config fi
   ```typescript
   {
     name: string;
-    team_id: number;
-    report_template_properties_id?: number;
+    team_id?: number;  // Optional if DRADIS_DEFAULT_TEAM_ID is set
+    report_template_properties_id?: number;  // Optional if DRADIS_DEFAULT_TEMPLATE_ID is set
     author_ids?: number[];
-    template?: string;
+    template?: string;  // Optional if DRADIS_DEFAULT_TEMPLATE is set
   }
   ```
 
@@ -116,7 +125,41 @@ To add Dradis MCP to your MCP configuration, add the following to your config fi
   ```typescript
   {
     issueId: number;
-    text: string;
+    parameters: {
+      text: string;
+    }
+  }
+  ```
+
+### Content Block Management
+
+- `getContentBlocks`: Get all content blocks in current project
+  ```typescript
+  // No parameters required
+  ```
+
+- `updateContentBlock`: Update a content block
+  ```typescript
+  {
+    blockId: number;
+    contentBlock: {
+      content: string;
+    }
+  }
+  ```
+
+### Document Property Management
+
+- `getDocumentProperties`: Get all document properties
+  ```typescript
+  // No parameters required
+  ```
+
+- `upsertDocumentProperty`: Create or update a document property
+  ```typescript
+  {
+    propertyName: string;
+    value: string;
   }
   ```
 

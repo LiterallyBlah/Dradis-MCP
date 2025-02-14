@@ -20,7 +20,7 @@ const config = loadConfig();
 
 const server = new FastMCP({
   name: "Dradis MCP",
-  version: "1.0.1",
+  version: "2.0.0",
 });
 
 // Server state
@@ -185,8 +185,8 @@ server.addTool({
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const { issueId, ...vulnerability } = args;
-    const result = await api.updateVulnerability(state.projectId, issueId, vulnerability);
+    // const { issueId, ...vulnerability } = args;
+    const result = await api.updateVulnerability(state.projectId, args.issueId, args.parameters);
     return formatResponse({
       message: "Vulnerability updated successfully",
       vulnerability: result
@@ -207,14 +207,14 @@ server.addTool({
 
     const api = new DradisAPI(config);
     const contentBlocks = await api.getContentBlocks(projectId);
-    return formatResponse(contentBlocks);
+    return `Output the content blocks in a list, with the ID followed by the fields (even empty fields with no values): ${formatResponse(contentBlocks)}`;
   },
 });
 
 // Update Content Block Tool
 server.addTool({
   name: "updateContentBlock",
-  description: "Update a content block in the current project",
+  description: "Update a content block in the current project. Provide the property and updated content in the contentBlock 'content' parameter",
   parameters: z.object({
     blockId: z.number().positive("Block ID must be positive"),
     contentBlock: UpdateContentBlockSchema,
@@ -246,13 +246,12 @@ server.addTool({
     }
 
     const properties = await api.getDocumentProperties(state.projectId);
-    return formatResponse(properties);
+    return `List the following properties with <name>: <value>. Don't change any details of the names and values: \n${formatResponse(properties)}`;
   },
 });
 
-// Update Document Property Tool
 server.addTool({
-  name: "updateDocumentProperty",
+  name: "upsertDocumentProperty",
   description: "Update a document property in the current project",
   parameters: z.object({
     propertyName: z.string(),
@@ -266,30 +265,51 @@ server.addTool({
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const property = await api.updateDocumentProperty(state.projectId, args.propertyName, args.value);
+    const property = await api.upsertDocumentProperty(state.projectId, args.propertyName, args.value);
     return formatResponse(property);
   },
-});
+})
 
-// Create Document Properties Tool
-server.addTool({
-  name: "createDocumentProperties",
-  description: "Create multiple document properties in the current project. Each property should be a key-value pair where the key is the property name (e.g. 'dradis.client') and the value is the property value (e.g. 'ACME Ltd.'). Example: {'properties': { 'dradis.client': 'ACME Ltd.', 'dradis.project': 'Test Project' }}",
-  parameters: z.object({
-    properties: z.record(z.string(), z.string()).describe('An object containing key-value pairs of property names and their values. Example: {"properties": { "dradis.client": "ACME Ltd.", "dradis.project": "Test Project" }}'),
-  }),
-  execute: async (args) => {
-    if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
-    }
-    if (!api) {
-      throw new UserError("API not initialized. Check your configuration.");
-    }
+// // Update Document Property Tool
+// server.addTool({
+//   name: "updateDocumentProperty",
+//   description: "Update a document property in the current project",
+//   parameters: z.object({
+//     propertyName: z.string(),
+//     value: z.string(),
+//   }),
+//   execute: async (args) => {
+//     if (!state.projectId) {
+//       throw new UserError("No project ID set. Use setProject or createProject first.");
+//     }
+//     if (!api) {
+//       throw new UserError("API not initialized. Check your configuration.");
+//     }
 
-    const properties = await api.createDocumentProperties(state.projectId, args.properties);
-    return formatResponse(properties);
-  },
-});
+//     const property = await api.updateDocumentProperty(state.projectId, args.propertyName, args.value);
+//     return formatResponse(property);
+//   },
+// });
+
+// // Create Document Properties Tool
+// server.addTool({
+//   name: "createDocumentProperties",
+//   description: "Create multiple document properties in the current project. Each property should be a key-value pair where the key is the property name (e.g. 'dradis.client') and the value is the property value (e.g. 'ACME Ltd.'). Example: {'properties': { 'dradis.client': 'ACME Ltd.', 'dradis.project': 'Test Project' }}",
+//   parameters: z.object({
+//     properties: z.record(z.string(), z.string()).describe('An object containing key-value pairs of property names and their values. Example: {"properties": { "dradis.client": "ACME Ltd.", "dradis.project": "Test Project" }}'),
+//   }),
+//   execute: async (args) => {
+//     if (!state.projectId) {
+//       throw new UserError("No project ID set. Use setProject or createProject first.");
+//     }
+//     if (!api) {
+//       throw new UserError("API not initialized. Check your configuration.");
+//     }
+
+//     const properties = await api.createDocumentProperties(state.projectId, args.properties);
+//     return formatResponse(properties);
+//   },
+// });
 
 // Test API connection before starting server
 async function testConnection() {

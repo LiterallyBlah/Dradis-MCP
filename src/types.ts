@@ -113,9 +113,13 @@ export const SimpleContentBlockSchema = z.object({
 });
 
 export const UpdateContentBlockSchema = z.object({
-  content: z.string(),
   block_group: z.string(),
+  content: z.object({}).passthrough().refine(
+    (val) => Object.keys(val).length > 0,
+    { message: "Content must have at least one key-value pair" }
+  ),
 });
+
 
 export type ContentBlockFields = z.infer<typeof ContentBlockFieldsSchema>;
 export type ContentBlock = z.infer<typeof ContentBlockSchema>;
