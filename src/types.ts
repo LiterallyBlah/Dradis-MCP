@@ -58,6 +58,7 @@ export const CreateVulnerabilitySchema = createVulnParams.reduce((schema, param)
   return schema.extend({ [param]: z.string().nonempty(`${param} is required`) });  
 }, z.object({}));
 
+
 export type CreateVulnerabilityRequest = z.infer<typeof CreateVulnerabilitySchema>;
 
 export const UpdateVulnerabilitySchema = createVulnParams.reduce((schema, param) => {
@@ -118,8 +119,7 @@ export const UpdateContentBlockSchema = z.object({
     (val) => Object.keys(val).length > 0,
     { message: "Content must have at least one key-value pair" }
   ),
-});
-
+})
 
 export type ContentBlockFields = z.infer<typeof ContentBlockFieldsSchema>;
 export type ContentBlock = z.infer<typeof ContentBlockSchema>;
