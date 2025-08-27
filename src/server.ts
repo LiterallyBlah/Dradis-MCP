@@ -1,19 +1,20 @@
-#!/usr/bin/env node
-
 // Configure TLS to accept self-signed certificates
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-import { config as dotenvConfig } from 'dotenv';
 import { FastMCP, UserError } from "fastmcp";
 import { z } from "zod";
-import { DradisAPI } from './api.js';
-import { ServerState, CreateVulnerabilitySchema, CreateProjectSchema, UpdateContentBlockSchema, CreateDocumentPropertiesSchema, UpdateVulnerabilitySchema } from './types.js';
-import { loadConfig } from './config.js';
-import https from 'node:https';
-import log from 'node:console';
-
-// Load environment variables from .env file
-dotenvConfig();
+import { DradisAPI } from "./api.js";
+import {
+  ServerState,
+  CreateVulnerabilitySchema,
+  CreateProjectSchema,
+  UpdateContentBlockSchema,
+  CreateDocumentPropertiesSchema,
+  UpdateVulnerabilitySchema,
+} from "./types.js";
+import { loadConfig } from "./config.js";
+import https from "node:https";
+import log from "node:console";
 
 // Load configuration first
 const config = loadConfig();
@@ -49,7 +50,7 @@ server.addTool({
     // Verify project exists before setting
     await api.getProjectDetails(args.projectId);
     state.projectId = args.projectId;
-    
+
     return formatResponse({ message: `Project ID set to ${args.projectId}` });
   },
 });
@@ -61,7 +62,9 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
@@ -90,21 +93,19 @@ server.addTool({
     // Apply environment variable defaults for optional parameters
     const projectData = {
       ...args,
-      report_template_properties_id: args.report_template_properties_id ?? config.DRADIS_DEFAULT_TEMPLATE_ID,
+      report_template_properties_id:
+        args.report_template_properties_id ?? config.DRADIS_DEFAULT_TEMPLATE_ID,
       template: args.template ?? config.DRADIS_DEFAULT_TEMPLATE,
     };
 
     const project = await api.createProject(projectData);
     state.projectId = project.id; // Automatically set as current project
-    return formatResponse({ 
+    return formatResponse({
       message: `Project created successfully with ID ${project.id}`,
-      project 
+      project,
     });
   },
 });
-
-
-
 
 // Create Vulnerability Tool
 server.addTool({
@@ -112,19 +113,21 @@ server.addTool({
   description: "Create a new vulnerability in the current project",
   parameters: CreateVulnerabilitySchema,
   execute: async (args) => {
-    log.info('createVulnerability', args);
+    log.info("createVulnerability", args);
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.\n${state.projectId}");
+      throw new UserError(
+        `No project ID set. Use setProject or createProject first. Current state: ${state.projectId}`
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
     const result = await api.createVulnerability(state.projectId, args);
-    log.info('createVulnerability', result);
+    log.info("createVulnerability", result);
     return formatResponse({
       message: "Vulnerability created successfully",
-      vulnerability: result
+      vulnerability: result,
     });
   },
 });
@@ -132,40 +135,68 @@ server.addTool({
 // Get Vulnerabilities Tool
 server.addTool({
   name: "getVulnerabilities",
-  description: "Get list of vulnerabilities in the current project. Returns 25 items per page.",
+  description:
+    "Get list of vulnerabilities in the current project. Returns 25 items per page.",
   parameters: z.object({
-    page: z.number().positive("Page number must be positive").optional().describe("Optional page number for pagination"),
+    page: z
+      .number()
+      .positive("Page number must be positive")
+      .optional()
+      .describe("Optional page number for pagination"),
   }),
   execute: async (args) => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const vulnerabilities = await api.getVulnerabilities(state.projectId, args.page);
-    return `${formatResponse({page: args.page || 1, items_per_page: 25, vulnerabilities})}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`
+    const vulnerabilities = await api.getVulnerabilities(
+      state.projectId,
+      args.page
+    );
+    return `${formatResponse({
+      page: args.page || 1,
+      items_per_page: 25,
+      vulnerabilities,
+    })}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`;
   },
 });
 
 // Get All Vulnerability Details Tool
 server.addTool({
   name: "getAllVulnerabilityDetails",
-  description: "Get list of all vulnerability details in the current project. Returns 10 items per page.",
+  description:
+    "Get list of all vulnerability details in the current project. Returns 10 items per page.",
   parameters: z.object({
-    page: z.number().positive("Page number must be positive").optional().describe("Optional page number for pagination"),
+    page: z
+      .number()
+      .positive("Page number must be positive")
+      .optional()
+      .describe("Optional page number for pagination"),
   }),
   execute: async (args) => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const vulnerabilities = await api.getAllVulnerabilityDetails(state.projectId, args.page);
-    return `${formatResponse({page: args.page || 1, items_per_page: 25, vulnerabilities})}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`
+    const vulnerabilities = await api.getAllVulnerabilityDetails(
+      state.projectId,
+      args.page
+    );
+    return `${formatResponse({
+      page: args.page || 1,
+      items_per_page: 25,
+      vulnerabilities,
+    })}\n\nGenerate the results as a list of '<ID>: <Rating> - <title>'`;
   },
 });
 
@@ -178,13 +209,18 @@ server.addTool({
   }),
   execute: async (args) => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const vulnerability = await api.getVulnerability(state.projectId, args.vulnerabilityId);
+    const vulnerability = await api.getVulnerability(
+      state.projectId,
+      args.vulnerabilityId
+    );
     return formatResponse(vulnerability);
   },
 });
@@ -199,17 +235,23 @@ server.addTool({
   }),
   execute: async (args) => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
     // const { issueId, ...vulnerability } = args;
-    const result = await api.updateVulnerability(state.projectId, args.issueId, args.parameters);
+    const result = await api.updateVulnerability(
+      state.projectId,
+      args.issueId,
+      args.parameters
+    );
     return formatResponse({
       message: "Vulnerability updated successfully",
-      vulnerability: result
+      vulnerability: result,
     });
   },
 });
@@ -227,27 +269,36 @@ server.addTool({
 
     const api = new DradisAPI(config);
     const contentBlocks = await api.getContentBlocks(projectId);
-    return `Output the content blocks in a list, with the ID followed by the fields (even empty fields with no values): ${formatResponse(contentBlocks)}`;
+    return `Output the content blocks in a list, with the ID followed by the fields (even empty fields with no values): ${formatResponse(
+      contentBlocks
+    )}`;
   },
 });
 
 // Update Content Block Tool
 server.addTool({
   name: "updateContentBlock",
-  description: "Update a content block in the current project. Provide the property and updated content in the contentBlock 'content' parameter",
+  description:
+    "Update a content block in the current project. Provide the property and updated content in the contentBlock 'content' parameter",
   parameters: z.object({
     blockId: z.number().positive("Block ID must be positive"),
     contentBlock: UpdateContentBlockSchema,
   }),
   execute: async (args) => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const block = await api.updateContentBlock(state.projectId, args.blockId, args.contentBlock);
+    const block = await api.updateContentBlock(
+      state.projectId,
+      args.blockId,
+      args.contentBlock
+    );
     return formatResponse(block);
   },
 });
@@ -259,14 +310,18 @@ server.addTool({
   parameters: z.object({}),
   execute: async () => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
     const properties = await api.getDocumentProperties(state.projectId);
-    return `List the following properties with <name>: <value>. Don't change any details of the names and values: \n${formatResponse(properties)}`;
+    return `List the following properties with <name>: <value>. Don't change any details of the names and values: \n${formatResponse(
+      properties
+    )}`;
   },
 });
 
@@ -279,16 +334,22 @@ server.addTool({
   }),
   execute: async (args) => {
     if (!state.projectId) {
-      throw new UserError("No project ID set. Use setProject or createProject first.");
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
     }
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const property = await api.upsertDocumentProperty(state.projectId, args.propertyName, args.value);
+    const property = await api.upsertDocumentProperty(
+      state.projectId,
+      args.propertyName,
+      args.value
+    );
     return formatResponse(property);
   },
-})
+});
 
 // // Update Document Property Tool
 // server.addTool({
@@ -344,17 +405,37 @@ async function testConnection() {
   }
 }
 
-// Modify server start to include connection test
+// Modify server start to include connection test and better error handling
 (async () => {
   try {
+    console.log("Starting Dradis MCP server...");
+    console.log("Configuration loaded:", {
+      url: config.DRADIS_URL,
+      hasToken: !!config.DRADIS_API_TOKEN,
+      defaultTeamId: config.DRADIS_DEFAULT_TEAM_ID,
+      defaultTemplateId: config.DRADIS_DEFAULT_TEMPLATE_ID,
+    });
+
+    // Test connection is commented out to avoid blocking startup
     // const connected = await testConnection();
     const connected = true;
+
     if (connected) {
+      console.log("Starting MCP server with stdio transport...");
       server.start({
         transportType: "stdio",
       });
+      console.log("MCP server started successfully");
+    } else {
+      console.error("Cannot start MCP server: API connection test failed");
+      process.exit(1);
     }
   } catch (error) {
     console.error("Failed to start server:", error);
+    if (error instanceof Error) {
+      console.error("Error details:", error.message);
+      console.error("Stack trace:", error.stack);
+    }
+    process.exit(1);
   }
 })();
