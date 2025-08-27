@@ -41,6 +41,7 @@ server.addTool({
   description: "Set the current Dradis project",
   parameters: z.object({
     projectId: z.number().positive("Project ID must be positive"),
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!api) {
@@ -59,7 +60,9 @@ server.addTool({
 server.addTool({
   name: "getProjectDetails",
   description: "Get details of the current Dradis project",
-  parameters: z.object({}),
+  parameters: z.object({
+    body: z.object({}).optional().default({}),
+  }),
   execute: async () => {
     if (!state.projectId) {
       throw new UserError(
@@ -79,7 +82,9 @@ server.addTool({
 server.addTool({
   name: "createProject",
   description: "Create a new Dradis project",
-  parameters: CreateProjectSchema,
+  parameters: CreateProjectSchema.extend({
+    body: z.object({}).optional().default({}),
+  }),
   execute: async (args) => {
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
@@ -111,7 +116,9 @@ server.addTool({
 server.addTool({
   name: "createVulnerability",
   description: "Create a new vulnerability in the current project",
-  parameters: CreateVulnerabilitySchema,
+  parameters: CreateVulnerabilitySchema.extend({
+    body: z.object({}).optional().default({}),
+  }),
   execute: async (args) => {
     log.info("createVulnerability", args);
     if (!state.projectId) {
@@ -143,6 +150,7 @@ server.addTool({
       .positive("Page number must be positive")
       .optional()
       .describe("Optional page number for pagination"),
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -177,6 +185,7 @@ server.addTool({
       .positive("Page number must be positive")
       .optional()
       .describe("Optional page number for pagination"),
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -206,6 +215,7 @@ server.addTool({
   description: "Get a specific vulnerability from the current project",
   parameters: z.object({
     vulnerabilityId: z.number().positive("Vulnerability ID must be positive"),
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -232,6 +242,7 @@ server.addTool({
   parameters: z.object({
     issueId: z.number().positive("Issue ID must be positive"),
     parameters: UpdateVulnerabilitySchema,
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -260,7 +271,9 @@ server.addTool({
 server.addTool({
   name: "getContentBlocks",
   description: "Get all content blocks in the current project",
-  parameters: z.object({}),
+  parameters: z.object({
+    body: z.object({}).optional().default({}),
+  }),
   async execute(args) {
     const { projectId } = state;
     if (!projectId) {
@@ -283,6 +296,7 @@ server.addTool({
   parameters: z.object({
     blockId: z.number().positive("Block ID must be positive"),
     contentBlock: UpdateContentBlockSchema,
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -307,7 +321,9 @@ server.addTool({
 server.addTool({
   name: "getDocumentProperties",
   description: "Get all document properties for the current project",
-  parameters: z.object({}),
+  parameters: z.object({
+    body: z.object({}).optional().default({}),
+  }),
   execute: async () => {
     if (!state.projectId) {
       throw new UserError(
@@ -331,6 +347,7 @@ server.addTool({
   parameters: z.object({
     propertyName: z.string(),
     value: z.string(),
+    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
