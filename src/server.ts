@@ -14,6 +14,8 @@ import {
 } from "./types.js";
 import { loadConfig } from "./config.js";
 import https from "node:https";
+import express from "express";
+import cors from "cors";
 // Removed node:console import - using built-in console for now
 
 // Load configuration first
@@ -434,6 +436,505 @@ async function testConnection() {
   }
 }
 
+// Create Express HTTP server for REST API endpoints
+function createHTTPServer() {
+  const app = express();
+
+  // Middleware
+  app.use(cors());
+  app.use(express.json());
+
+  // Helper function to handle async route errors
+  const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+
+  // GET /getProjectDetails
+  app.get(
+    "/getProjectDetails",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const details = await api.getProjectDetails(state.projectId);
+      res.json(details);
+    })
+  );
+
+  // POST /getProjectDetails
+  app.post(
+    "/getProjectDetails",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const details = await api.getProjectDetails(state.projectId);
+      res.json(details);
+    })
+  );
+
+  // GET /getVulnerabilities
+  app.get(
+    "/getVulnerabilities",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const page = req.query.page
+        ? parseInt(req.query.page as string)
+        : undefined;
+      const vulnerabilities = await api.getVulnerabilities(
+        state.projectId,
+        page
+      );
+
+      res.json({
+        page: page || 1,
+        items_per_page: 25,
+        vulnerabilities,
+      });
+    })
+  );
+
+  // POST /getVulnerabilities
+  app.post(
+    "/getVulnerabilities",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const { page } = req.body;
+      const vulnerabilities = await api.getVulnerabilities(
+        state.projectId,
+        page
+      );
+
+      res.json({
+        page: page || 1,
+        items_per_page: 25,
+        vulnerabilities,
+      });
+    })
+  );
+
+  // GET /getAllVulnerabilityDetails
+  app.get(
+    "/getAllVulnerabilityDetails",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const page = req.query.page
+        ? parseInt(req.query.page as string)
+        : undefined;
+      const vulnerabilities = await api.getAllVulnerabilityDetails(
+        state.projectId,
+        page
+      );
+
+      res.json({
+        page: page || 1,
+        items_per_page: 25,
+        vulnerabilities,
+      });
+    })
+  );
+
+  // POST /getAllVulnerabilityDetails
+  app.post(
+    "/getAllVulnerabilityDetails",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const { page } = req.body;
+      const vulnerabilities = await api.getAllVulnerabilityDetails(
+        state.projectId,
+        page
+      );
+
+      res.json({
+        page: page || 1,
+        items_per_page: 25,
+        vulnerabilities,
+      });
+    })
+  );
+
+  // GET /getVulnerability
+  app.get(
+    "/getVulnerability",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const vulnerabilityId = parseInt(req.query.vulnerabilityId as string);
+      if (!vulnerabilityId || vulnerabilityId <= 0) {
+        return res
+          .status(400)
+          .json({ error: "Valid vulnerabilityId is required" });
+      }
+
+      const vulnerability = await api.getVulnerability(
+        state.projectId,
+        vulnerabilityId
+      );
+      res.json(vulnerability);
+    })
+  );
+
+  // POST /getVulnerability
+  app.post(
+    "/getVulnerability",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const { vulnerabilityId } = req.body;
+      if (!vulnerabilityId || vulnerabilityId <= 0) {
+        return res
+          .status(400)
+          .json({ error: "Valid vulnerabilityId is required" });
+      }
+
+      const vulnerability = await api.getVulnerability(
+        state.projectId,
+        vulnerabilityId
+      );
+      res.json(vulnerability);
+    })
+  );
+
+  // GET /getContentBlocks
+  app.get(
+    "/getContentBlocks",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const contentBlocks = await api.getContentBlocks(state.projectId);
+      res.json(contentBlocks);
+    })
+  );
+
+  // POST /getContentBlocks
+  app.post(
+    "/getContentBlocks",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const contentBlocks = await api.getContentBlocks(state.projectId);
+      res.json(contentBlocks);
+    })
+  );
+
+  // GET /getDocumentProperties
+  app.get(
+    "/getDocumentProperties",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const properties = await api.getDocumentProperties(state.projectId);
+      res.json(properties);
+    })
+  );
+
+  // POST /getDocumentProperties
+  app.post(
+    "/getDocumentProperties",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const properties = await api.getDocumentProperties(state.projectId);
+      res.json(properties);
+    })
+  );
+
+  // POST /setProject
+  app.post(
+    "/setProject",
+    asyncHandler(async (req: any, res: any) => {
+      const { projectId } = req.body;
+      if (!projectId || projectId <= 0) {
+        return res.status(400).json({ error: "Valid projectId is required" });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      // Verify project exists before setting
+      await api.getProjectDetails(projectId);
+      state.projectId = projectId;
+
+      res.json({ message: `Project ID set to ${projectId}` });
+    })
+  );
+
+  // POST /createProject
+  app.post(
+    "/createProject",
+    asyncHandler(async (req: any, res: any) => {
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      let args = req.body;
+
+      // If team_id wasn't provided in args, try to use the environment default
+      if (!args.team_id && config.DRADIS_DEFAULT_TEAM_ID) {
+        args.team_id = config.DRADIS_DEFAULT_TEAM_ID;
+      }
+
+      // Apply environment variable defaults for optional parameters
+      const projectData = {
+        ...args,
+        report_template_properties_id:
+          args.report_template_properties_id ??
+          config.DRADIS_DEFAULT_TEMPLATE_ID,
+        template: args.template ?? config.DRADIS_DEFAULT_TEMPLATE,
+      };
+
+      const project = await api.createProject(projectData);
+      state.projectId = project.id; // Automatically set as current project
+
+      res.json({
+        message: `Project created successfully with ID ${project.id}`,
+        project,
+      });
+    })
+  );
+
+  // POST /createVulnerability
+  app.post(
+    "/createVulnerability",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const result = await api.createVulnerability(state.projectId, req.body);
+      res.json({
+        message: "Vulnerability created successfully",
+        vulnerability: result,
+      });
+    })
+  );
+
+  // POST /updateVulnerability
+  app.post(
+    "/updateVulnerability",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const { issueId, parameters } = req.body;
+      if (!issueId || issueId <= 0) {
+        return res.status(400).json({ error: "Valid issueId is required" });
+      }
+
+      const result = await api.updateVulnerability(
+        state.projectId,
+        issueId,
+        parameters
+      );
+      res.json({
+        message: "Vulnerability updated successfully",
+        vulnerability: result,
+      });
+    })
+  );
+
+  // POST /updateContentBlock
+  app.post(
+    "/updateContentBlock",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const { blockId, contentBlock } = req.body;
+      if (!blockId || blockId <= 0) {
+        return res.status(400).json({ error: "Valid blockId is required" });
+      }
+
+      const block = await api.updateContentBlock(
+        state.projectId,
+        blockId,
+        contentBlock
+      );
+      res.json(block);
+    })
+  );
+
+  // POST /upsertDocumentProperty
+  app.post(
+    "/upsertDocumentProperty",
+    asyncHandler(async (req: any, res: any) => {
+      if (!state.projectId) {
+        return res.status(400).json({
+          error: "No project ID set. Use setProject or createProject first.",
+        });
+      }
+      if (!api) {
+        return res.status(500).json({
+          error: "API not initialized. Check your configuration.",
+        });
+      }
+
+      const { propertyName, value } = req.body;
+      if (!propertyName || !value) {
+        return res
+          .status(400)
+          .json({ error: "propertyName and value are required" });
+      }
+
+      const property = await api.upsertDocumentProperty(
+        state.projectId,
+        propertyName,
+        value
+      );
+      res.json(property);
+    })
+  );
+
+  // Error handling middleware
+  app.use((error: any, req: any, res: any, next: any) => {
+    console.error("HTTP server error:", error);
+    if (error instanceof UserError) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  return app;
+}
+
 // Server startup with improved logging and error handling
 (async () => {
   try {
@@ -451,14 +952,41 @@ async function testConnection() {
     const connected = true;
 
     if (connected) {
-      console.log("🔗 Starting MCP server with stdio transport...");
-      server.start({
-        transportType: "stdio",
-      });
-      console.log("✅ Dradis MCP server started successfully!");
+      // Check if we should run in HTTP mode or stdio mode
+      const runMode = process.env.DRADIS_MCP_MODE || "stdio";
+
+      if (runMode === "http") {
+        const port = parseInt(process.env.PORT || "3000");
+        console.log(`🔗 Starting HTTP server on port ${port}...`);
+
+        // Create and start HTTP server
+        const httpApp = createHTTPServer();
+        httpApp.listen(port, () => {
+          console.log(`✅ HTTP server started successfully on port ${port}!`);
+          console.log(
+            `🌐 HTTP endpoints available at http://localhost:${port}/`
+          );
+        });
+      } else {
+        console.log("🔗 Starting MCP server with stdio transport...");
+        server.start({
+          transportType: "stdio",
+        });
+        console.log("✅ Dradis MCP server started successfully!");
+      }
+
       console.log(
-        "📝 Available tools: setProject, createProject, createVulnerability, getVulnerabilities, updateVulnerability, getContentBlocks, updateContentBlock, getDocumentProperties, upsertDocumentProperty"
+        "📝 Available MCP tools: setProject, createProject, createVulnerability, getVulnerabilities, updateVulnerability, getContentBlocks, updateContentBlock, getDocumentProperties, upsertDocumentProperty"
       );
+
+      if (runMode === "http") {
+        console.log(
+          "🌐 Available HTTP endpoints (GET & POST): /getProjectDetails, /getVulnerabilities, /getAllVulnerabilityDetails, /getVulnerability, /getContentBlocks, /getDocumentProperties"
+        );
+        console.log(
+          "🌐 Available HTTP endpoints (POST only): /setProject, /createProject, /createVulnerability, /updateVulnerability, /updateContentBlock, /upsertDocumentProperty"
+        );
+      }
     } else {
       console.error("❌ Cannot start MCP server: API connection test failed");
       process.exit(1);
