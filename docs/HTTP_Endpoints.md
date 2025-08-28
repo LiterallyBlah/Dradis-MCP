@@ -1,10 +1,24 @@
 # HTTP Endpoints Documentation
 
-This document describes the HTTP REST API endpoints available in the Dradis MCP server.
+This document describes the HTTP REST API endpoints available in the Dradis MCP server, optimized for MCPO (MCP-to-OpenAPI proxy) integration.
 
-## Running in HTTP Mode
+## Running with MCPO (Recommended)
 
-To start the server in HTTP mode instead of stdio mode:
+[MCPO](https://github.com/open-webui/mcpo) converts MCP servers to OpenAPI-compatible HTTP endpoints with auto-generated documentation. To use your Dradis MCP server with MCPO:
+
+```bash
+# Start your Dradis MCP server in stdio mode (default)
+npm start
+
+# In another terminal, start MCPO to proxy the MCP server
+uvx mcpo --port 8000 --api-key "your-secret-key" -- node dist/server.js
+```
+
+Your server will be available at **http://localhost:8000** with auto-generated OpenAPI documentation at **http://localhost:8000/docs**.
+
+## Direct HTTP Mode (Alternative)
+
+You can also run in direct HTTP mode instead of using MCPO:
 
 ```bash
 # Set environment variable and start
@@ -16,7 +30,15 @@ DRADIS_MCP_MODE=http PORT=8080 npm start
 
 Default port is 3000 if not specified.
 
-## Base URL
+## Base URLs
+
+**With MCPO (Recommended):**
+
+```
+http://localhost:8000
+```
+
+**Direct HTTP Mode:**
 
 ```
 http://localhost:3000
@@ -24,10 +46,11 @@ http://localhost:3000
 
 ## Authentication
 
-All endpoints require that the Dradis API be properly configured with:
+**With MCPO**: Use `Authorization: Bearer your-secret-key` header
+**Direct HTTP Mode**: Requires environment variables:
 
-- `DRADIS_URL` environment variable
-- `DRADIS_API_TOKEN` environment variable
+- `DRADIS_URL` - Your Dradis instance URL
+- `DRADIS_API_TOKEN` - Your Dradis API token
 
 ## Project Context
 
@@ -35,136 +58,126 @@ Most endpoints require a project to be set first using `/setProject`.
 
 ## Available Endpoints
 
-### GET and POST Methods
+All endpoints now include comprehensive request bodies with detailed parameter descriptions for optimal OpenAPI schema generation.
 
-These endpoints support both GET and POST methods:
+### Read Operations
 
-#### GET/POST /getProjectDetails
+#### POST /getProjectDetails
 
-Returns details of the currently set project.
+Returns detailed information about the current project including metadata, team, and settings.
 
-**GET Example:**
-
-```bash
-curl http://localhost:3000/getProjectDetails
-```
-
-**POST Example:**
+**Example:**
 
 ```bash
-curl -X POST http://localhost:3000/getProjectDetails \
-  -H "Content-Type: application/json"
-```
-
-#### GET/POST /getVulnerabilities
-
-Lists vulnerabilities in the current project (25 items per page).
-
-**GET Example:**
-
-```bash
-curl "http://localhost:3000/getVulnerabilities?page=1"
-```
-
-**POST Example:**
-
-```bash
-curl -X POST http://localhost:3000/getVulnerabilities \
+curl -X POST http://localhost:8000/getProjectDetails \
   -H "Content-Type: application/json" \
-  -d '{"page": 1}'
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{
+    "includeMetadata": true
+  }'
 ```
 
-#### GET/POST /getAllVulnerabilityDetails
+#### POST /getVulnerabilities
 
-Gets detailed vulnerability information (25 items per page).
+Retrieves a paginated list of vulnerability summaries including ID, title, and risk rating.
 
-**GET Example:**
-
-```bash
-curl "http://localhost:3000/getAllVulnerabilityDetails?page=1"
-```
-
-**POST Example:**
+**Example:**
 
 ```bash
-curl -X POST http://localhost:3000/getAllVulnerabilityDetails \
+curl -X POST http://localhost:8000/getVulnerabilities \
   -H "Content-Type: application/json" \
-  -d '{"page": 1}'
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{
+    "page": 1,
+    "includeFields": ["Title", "Risk", "Status"]
+  }'
 ```
 
-#### GET/POST /getVulnerability
+#### POST /getAllVulnerabilityDetails
 
-Gets a specific vulnerability by ID.
+Retrieves complete vulnerability details including all fields and metadata.
 
-**GET Example:**
-
-```bash
-curl "http://localhost:3000/getVulnerability?vulnerabilityId=123"
-```
-
-**POST Example:**
+**Example:**
 
 ```bash
-curl -X POST http://localhost:3000/getVulnerability \
+curl -X POST http://localhost:8000/getAllVulnerabilityDetails \
   -H "Content-Type: application/json" \
-  -d '{"vulnerabilityId": 123}'
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{
+    "page": 1,
+    "filterByRisk": "High"
+  }'
 ```
 
-#### GET/POST /getContentBlocks
+#### POST /getVulnerability
 
-Lists all content blocks in the current project.
+Retrieves complete details for a specific vulnerability including evidence and metadata.
 
-**GET Example:**
+**Example:**
 
 ```bash
-curl http://localhost:3000/getContentBlocks
+curl -X POST http://localhost:8000/getVulnerability \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{
+    "vulnerabilityId": 123,
+    "includeEvidence": true
+  }'
 ```
 
-**POST Example:**
+#### POST /getContentBlocks
+
+Retrieves all content blocks with their IDs and field data.
+
+**Example:**
 
 ```bash
-curl -X POST http://localhost:3000/getContentBlocks \
-  -H "Content-Type: application/json"
+curl -X POST http://localhost:8000/getContentBlocks \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{
+    "blockGroup": "evidence",
+    "includeContent": true
+  }'
 ```
 
-#### GET/POST /getDocumentProperties
+#### POST /getDocumentProperties
 
-Lists all document properties for the current project.
+Retrieves all document properties and their values for project configuration.
 
-**GET Example:**
+**Example:**
 
 ```bash
-curl http://localhost:3000/getDocumentProperties
+curl -X POST http://localhost:8000/getDocumentProperties \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
+  -d '{
+    "propertyPrefix": "dradis.",
+    "includeEmpty": false
+  }'
 ```
 
-**POST Example:**
-
-```bash
-curl -X POST http://localhost:3000/getDocumentProperties \
-  -H "Content-Type: application/json"
-```
-
-### POST Only Methods
-
-These endpoints only support POST method:
+### Write Operations
 
 #### POST /setProject
 
-Sets the current project context.
+Sets the current project context for all subsequent operations.
 
 ```bash
-curl -X POST http://localhost:3000/setProject \
+curl -X POST http://localhost:8000/setProject \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{"projectId": 123}'
 ```
 
 #### POST /createProject
 
-Creates a new Dradis project.
+Creates a new Dradis project and sets it as current context.
 
 ```bash
-curl -X POST http://localhost:3000/createProject \
+curl -X POST http://localhost:8000/createProject \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "name": "My Project",
     "team_id": 1
@@ -173,11 +186,12 @@ curl -X POST http://localhost:3000/createProject \
 
 #### POST /createVulnerability
 
-Creates a new vulnerability in the current project.
+Creates a new security vulnerability finding with detailed information.
 
 ```bash
-curl -X POST http://localhost:3000/createVulnerability \
+curl -X POST http://localhost:8000/createVulnerability \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "Title": "SQL Injection",
     "Risk": "High",
@@ -187,11 +201,12 @@ curl -X POST http://localhost:3000/createVulnerability \
 
 #### POST /updateVulnerability
 
-Updates an existing vulnerability.
+Updates an existing vulnerability with new information.
 
 ```bash
-curl -X POST http://localhost:3000/updateVulnerability \
+curl -X POST http://localhost:8000/updateVulnerability \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "issueId": 123,
     "parameters": {
@@ -203,11 +218,12 @@ curl -X POST http://localhost:3000/updateVulnerability \
 
 #### POST /updateContentBlock
 
-Updates a content block.
+Updates a content block with new field values and content.
 
 ```bash
-curl -X POST http://localhost:3000/updateContentBlock \
+curl -X POST http://localhost:8000/updateContentBlock \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "blockId": 456,
     "contentBlock": {
@@ -221,14 +237,16 @@ curl -X POST http://localhost:3000/updateContentBlock \
 
 #### POST /upsertDocumentProperty
 
-Creates or updates a document property.
+Creates or updates a document property value in the current project.
 
 ```bash
-curl -X POST http://localhost:3000/upsertDocumentProperty \
+curl -X POST http://localhost:8000/upsertDocumentProperty \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret-key" \
   -d '{
     "propertyName": "dradis.client",
-    "value": "ACME Corporation"
+    "value": "ACME Corporation",
+    "overwriteExisting": true
   }'
 ```
 
@@ -245,20 +263,42 @@ All endpoints return JSON error responses with appropriate HTTP status codes:
 Common error codes:
 
 - `400`: Bad Request (invalid parameters, no project set)
+- `401`: Unauthorized (invalid API key with MCPO)
 - `500`: Internal Server Error (API issues, configuration problems)
 
-## Testing
+## Testing with MCPO
 
-Use the provided test script to verify endpoints:
+To test the OpenAPI integration:
 
 ```bash
-# Start server in HTTP mode
-DRADIS_MCP_MODE=http npm start
+# Start Dradis MCP server
+npm start
 
-# In another terminal, run tests
-node test-http-endpoints.js
+# In another terminal, start MCPO
+uvx mcpo --port 8000 --api-key "test-key" -- node dist/server.js
+
+# Access the interactive API documentation
+open http://localhost:8000/docs
 ```
 
-## CORS
+## MCPO Benefits
 
-CORS is enabled by default, allowing cross-origin requests from web applications.
+Using MCPO provides several advantages:
+
+- **Auto-generated OpenAPI Schema**: Complete API documentation with request/response examples
+- **Interactive Testing**: Built-in Swagger UI for testing endpoints
+- **Authentication**: Secure API key-based authentication
+- **Standard HTTP**: Works with any HTTP client or SDK
+- **Type Safety**: Generated client SDKs with proper typing
+
+## OpenAPI Schema Features
+
+The generated OpenAPI schema includes:
+
+- Detailed parameter descriptions for all tools
+- Request/response schemas with examples
+- Proper HTTP status codes and error handling
+- Authentication requirements
+- Tool categorization (read vs write operations)
+- Optional parameter handling with defaults
+- Comprehensive field descriptions and validation rules

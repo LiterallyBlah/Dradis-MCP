@@ -66,9 +66,13 @@ function formatResponse(data: unknown): string {
 // Set Project Tool
 server.addTool({
   name: "setProject",
-  description: "Set the current Dradis project",
+  description:
+    "Set the current Dradis project context for all subsequent operations",
   parameters: z.object({
-    projectId: z.number().positive("Project ID must be positive"),
+    projectId: z
+      .number()
+      .positive("Project ID must be positive")
+      .describe("The ID of the Dradis project to set as current context"),
   }),
   execute: async (args) => {
     if (!api) {
@@ -86,9 +90,18 @@ server.addTool({
 // Get Project Details Tool
 server.addTool({
   name: "getProjectDetails",
-  description: "Get details of the current Dradis project",
-  parameters: z.object({}),
-  execute: async () => {
+  description:
+    "Get detailed information about the current Dradis project including metadata, team, and settings",
+  parameters: z.object({
+    includeMetadata: z
+      .boolean()
+      .optional()
+      .describe(
+        "Whether to include additional project metadata in the response"
+      )
+      .default(true),
+  }),
+  execute: async (args) => {
     if (!state.projectId) {
       throw new UserError(
         "No project ID set. Use setProject or createProject first."
@@ -106,7 +119,8 @@ server.addTool({
 // Create Project Tool
 server.addTool({
   name: "createProject",
-  description: "Create a new Dradis project",
+  description:
+    "Create a new Dradis project with specified configuration and automatically set it as the current project context",
   parameters: CreateProjectSchema,
   execute: async (args) => {
     if (!api) {
@@ -138,7 +152,8 @@ server.addTool({
 // Create Vulnerability Tool
 server.addTool({
   name: "createVulnerability",
-  description: "Create a new vulnerability in the current project",
+  description:
+    "Create a new security vulnerability finding in the current project with detailed information",
   parameters: CreateVulnerabilitySchema,
   execute: async (args) => {
     if (!state.projectId) {
@@ -162,13 +177,18 @@ server.addTool({
 server.addTool({
   name: "getVulnerabilities",
   description:
-    "Get list of vulnerabilities in the current project. Returns 25 items per page.",
+    "Retrieve a paginated list of vulnerability summaries from the current project, including ID, title, and risk rating",
   parameters: z.object({
     page: z
       .number()
       .positive("Page number must be positive")
       .optional()
-      .describe("Optional page number for pagination"),
+      .describe("Page number for pagination (25 items per page)")
+      .default(1),
+    includeFields: z
+      .array(z.string())
+      .optional()
+      .describe("Specific vulnerability fields to include in the response"),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -196,13 +216,18 @@ server.addTool({
 server.addTool({
   name: "getAllVulnerabilityDetails",
   description:
-    "Get list of all vulnerability details in the current project. Returns 10 items per page.",
+    "Retrieve a paginated list of complete vulnerability details including all fields and metadata from the current project",
   parameters: z.object({
     page: z
       .number()
       .positive("Page number must be positive")
       .optional()
-      .describe("Optional page number for pagination"),
+      .describe("Page number for pagination (25 items per page)")
+      .default(1),
+    filterByRisk: z
+      .enum(["Low", "Medium", "High", "Critical"])
+      .optional()
+      .describe("Filter vulnerabilities by risk rating"),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -229,9 +254,18 @@ server.addTool({
 // Get Vulnerability Tool
 server.addTool({
   name: "getVulnerability",
-  description: "Get a specific vulnerability from the current project",
+  description:
+    "Retrieve complete details for a specific vulnerability including all fields, evidence, and metadata",
   parameters: z.object({
-    vulnerabilityId: z.number().positive("Vulnerability ID must be positive"),
+    vulnerabilityId: z
+      .number()
+      .positive("Vulnerability ID must be positive")
+      .describe("The unique ID of the vulnerability to retrieve"),
+    includeEvidence: z
+      .boolean()
+      .optional()
+      .describe("Whether to include associated evidence in the response")
+      .default(true),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -254,10 +288,16 @@ server.addTool({
 // Update Vulnerability Tool
 server.addTool({
   name: "updateVulnerability",
-  description: "Update an existing vulnerability",
+  description:
+    "Update an existing vulnerability with new information, modifying only the specified fields",
   parameters: z.object({
-    issueId: z.number().positive("Issue ID must be positive"),
-    parameters: UpdateVulnerabilitySchema,
+    issueId: z
+      .number()
+      .positive("Issue ID must be positive")
+      .describe("The unique ID of the vulnerability to update"),
+    parameters: UpdateVulnerabilitySchema.describe(
+      "Vulnerability fields to update with new values"
+    ),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -285,9 +325,20 @@ server.addTool({
 // Get Content Blocks Tool
 server.addTool({
   name: "getContentBlocks",
-  description: "Get all content blocks in the current project",
-  parameters: z.object({}),
-  execute: async () => {
+  description:
+    "Retrieve all content blocks from the current project, including their IDs and field data",
+  parameters: z.object({
+    blockGroup: z
+      .string()
+      .optional()
+      .describe("Filter content blocks by their block group type"),
+    includeContent: z
+      .boolean()
+      .optional()
+      .describe("Whether to include full content in the response")
+      .default(true),
+  }),
+  execute: async (args) => {
     if (!state.projectId) {
       throw new UserError(
         "No project ID set. Use setProject or createProject first."
@@ -308,10 +359,15 @@ server.addTool({
 server.addTool({
   name: "updateContentBlock",
   description:
-    "Update a content block in the current project. Provide the property and updated content in the contentBlock 'content' parameter",
+    "Update a content block in the current project with new field values and content",
   parameters: z.object({
-    blockId: z.number().positive("Block ID must be positive"),
-    contentBlock: UpdateContentBlockSchema,
+    blockId: z
+      .number()
+      .positive("Block ID must be positive")
+      .describe("The unique ID of the content block to update"),
+    contentBlock: UpdateContentBlockSchema.describe(
+      "Content block data including block group and field updates"
+    ),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -335,9 +391,22 @@ server.addTool({
 // Get Document Properties Tool
 server.addTool({
   name: "getDocumentProperties",
-  description: "Get all document properties for the current project",
-  parameters: z.object({}),
-  execute: async () => {
+  description:
+    "Retrieve all document properties and their values for the current project configuration",
+  parameters: z.object({
+    propertyPrefix: z
+      .string()
+      .optional()
+      .describe(
+        "Filter properties by name prefix (e.g., 'dradis.' for system properties)"
+      ),
+    includeEmpty: z
+      .boolean()
+      .optional()
+      .describe("Whether to include properties with empty values")
+      .default(false),
+  }),
+  execute: async (args) => {
     if (!state.projectId) {
       throw new UserError(
         "No project ID set. Use setProject or createProject first."
@@ -356,12 +425,20 @@ server.addTool({
 
 server.addTool({
   name: "upsertDocumentProperty",
-  description: "Create or update a document property in the current project",
+  description:
+    "Create a new document property or update an existing property value in the current project",
   parameters: z.object({
     propertyName: z
       .string()
-      .describe("The name of the property to create or update"),
+      .describe(
+        "The name of the property to create or update (e.g., 'dradis.client', 'custom.field')"
+      ),
     value: z.string().describe("The value to set for the property"),
+    overwriteExisting: z
+      .boolean()
+      .optional()
+      .describe("Whether to overwrite existing property values")
+      .default(true),
   }),
   execute: async (args) => {
     if (!state.projectId) {
