@@ -1,7 +1,7 @@
-import { 
-  Vulnerability, 
-  CreateProject, 
-  CreateVulnerabilityRequest, 
+import {
+  Vulnerability,
+  CreateProject,
+  CreateVulnerabilityRequest,
   VulnerabilityListItem,
   ProjectDetails,
   ContentBlock,
@@ -10,10 +10,9 @@ import {
   CreateDocumentProperties,
   UpdateVulnerabilityRequest,
   ContentBlockSchema,
-} from './types.js';
-import { Config } from './config.js';
-import * as fs from 'fs';
-import { UnexpectedStateError } from 'fastmcp';
+} from "./types.js";
+import { Config } from "./config.js";
+import { UserError } from "fastmcp";
 
 export class DradisAPI {
   private apiToken: string;
@@ -24,11 +23,14 @@ export class DradisAPI {
     this.baseUrl = config.DRADIS_URL;
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers = {
-      'Authorization': `Token token=${this.apiToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Token token=${this.apiToken}`,
+      "Content-Type": "application/json",
       ...options.headers,
     };
 
@@ -46,98 +48,124 @@ export class DradisAPI {
       }
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP ${response.status} ${response.statusText} for ${url}\n` +
-          `Response: ${typeof errorBody === 'string' ? errorBody : JSON.stringify(errorBody)}`
-        );
+        const errorMessage = `HTTP ${response.status} ${response.statusText} for ${url}`;
+        const responseDetails =
+          typeof errorBody === "string" ? errorBody : JSON.stringify(errorBody);
+
+        // Use UserError for client errors (4xx) and Error for server errors (5xx)
+        if (response.status >= 400 && response.status < 500) {
+          throw new UserError(`${errorMessage}\nResponse: ${responseDetails}`);
+        } else {
+          throw new Error(`${errorMessage}\nResponse: ${responseDetails}`);
+        }
       }
 
-      return await response.json() as T;
+      return (await response.json()) as T;
     } catch (error) {
-      if (error instanceof Error) {
+      if (error instanceof UserError || error instanceof Error) {
         throw error;
       }
-      throw new Error(`Network error while accessing ${url}: ${String(error)}`);
+      throw new UserError(
+        `Network error while accessing ${url}: ${String(error)}`
+      );
     }
   }
 
-  private ConstructDradisResponse(data: any): string {
-    let construction: string ='';
+  private ConstructDradisResponse(data: Record<string, unknown>): string {
+    let construction = "";
     Object.keys(data).forEach((key) => {
       construction += `#[${key}]#\r\n${data[key]}\r\n\r\n`;
     });
     return construction;
-  } 
+  }
 
   async getProjectDetails(projectId: number): Promise<ProjectDetails> {
     return this.request<ProjectDetails>(`/pro/api/projects/${projectId}`);
   }
 
   async createProject(project: CreateProject): Promise<ProjectDetails> {
-    return this.request<ProjectDetails>('/pro/api/projects', {
-      method: 'POST',
+    return this.request<ProjectDetails>("/pro/api/projects", {
+      method: "POST",
       body: JSON.stringify({ project }),
     });
   }
 
-  async getVulnerabilities(projectId: number, page?: number): Promise<VulnerabilityListItem[]> {
-    const url = page ? `/pro/api/issues?page=${page}` : '/pro/api/issues';
+  async getVulnerabilities(
+    projectId: number,
+    page?: number
+  ): Promise<VulnerabilityListItem[]> {
+    const url = page ? `/pro/api/issues?page=${page}` : "/pro/api/issues";
     const response = this.request<Vulnerability[]>(url, {
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
+        "Dradis-Project-Id": projectId.toString(),
       },
     });
-  
+
     return (await response).map((vulnerability: Vulnerability) => ({
       id: vulnerability.id,
       title: vulnerability.title,
       fields: {
-        Rating: vulnerability.fields.Rating,
+        Rating: String(vulnerability.fields.Rating || "Not Rated"),
       },
     }));
   }
 
-  async getAllVulnerabilityDetails(projectId: number, page?: number): Promise<VulnerabilityListItem[]> {
-    const url = page ? `/pro/api/issues?page=${page}` : '/pro/api/issues';
+  async getAllVulnerabilityDetails(
+    projectId: number,
+    page?: number
+  ): Promise<
+    Array<{ id: number; title: string; fields: Record<string, unknown> }>
+  > {
+    const url = page ? `/pro/api/issues?page=${page}` : "/pro/api/issues";
     const response = this.request<Vulnerability[]>(url, {
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
+        "Dradis-Project-Id": projectId.toString(),
       },
     });
-  
+
     return (await response).map((vulnerability: Vulnerability) => ({
       id: vulnerability.id,
       title: vulnerability.title,
-      fields: vulnerability.fields
+      fields: vulnerability.fields,
     }));
   }
 
-  async getVulnerability(projectId: number, vulnerabilityId: number): Promise<Vulnerability> {
-    const response = await this.request<Vulnerability>(`/pro/api/issues/${vulnerabilityId}`, {
-      headers: {
-        'Dradis-Project-Id': projectId.toString(),
-      },
-    }); 
-  
-    let construction: any = { 
+  async getVulnerability(
+    projectId: number,
+    vulnerabilityId: number
+  ): Promise<Vulnerability> {
+    const response = await this.request<Vulnerability>(
+      `/pro/api/issues/${vulnerabilityId}`,
+      {
+        headers: {
+          "Dradis-Project-Id": projectId.toString(),
+        },
+      }
+    );
+
+    const construction: Record<string, unknown> = {
       id: response.id,
       author: response.author,
     };
-  
+
     for (const key in response.fields) {
       construction[key] = response.fields[key];
     }
-  
-    return construction;
-  }
-  
 
-  async createVulnerability(projectId: number, vulnerability: any): Promise<Vulnerability> {
-    const compiledVulnerability = this.ConstructDradisResponse(vulnerability);
-    return this.request<Vulnerability>('/pro/api/issues', {
-      method: 'POST',
+    return construction as Vulnerability;
+  }
+
+  async createVulnerability(
+    projectId: number,
+    vulnerability: CreateVulnerabilityRequest
+  ): Promise<Vulnerability> {
+    const compiledVulnerability = this.ConstructDradisResponse(
+      vulnerability as Record<string, unknown>
+    );
+    return this.request<Vulnerability>("/pro/api/issues", {
+      method: "POST",
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
+        "Dradis-Project-Id": projectId.toString(),
       },
       body: JSON.stringify({ issue: { text: compiledVulnerability } }),
     });
@@ -148,112 +176,149 @@ export class DradisAPI {
     issueId: number,
     vulnerability: UpdateVulnerabilityRequest
   ): Promise<Vulnerability> {
-      let getVulnerability = await this.getVulnerability(projectId, issueId);
-      
-      // Clone the fetched vulnerability to avoid mutation
-      const updatedVulnerability: Vulnerability = { ...getVulnerability };
-  
-      // Ensure only defined string properties are updated
-      Object.entries(vulnerability).forEach(([key, value]) => {
-          if (typeof value === "string" && value.trim() !== "" || value != undefined) {
-              updatedVulnerability[key] = value;
-          }
-      });
-  
-      const dradisConstruct = this.ConstructDradisResponse(updatedVulnerability);
-  
-      return this.request<Vulnerability>(`/pro/api/issues/${issueId}`, {
-          method: 'PUT',
-          headers: {
-              'Dradis-Project-Id': projectId.toString(),
-          },
-          body: JSON.stringify({ issue: { text: dradisConstruct } }),
-      });
-  }
-  
-  
+    let getVulnerability = await this.getVulnerability(projectId, issueId);
 
+    // Clone the fetched vulnerability to avoid mutation
+    const updatedVulnerability: Vulnerability = { ...getVulnerability };
 
-  async getContentBlocks(projectId: number): Promise<{ id: number; fields: object }[]> {
-    const blocks = await this.request<ContentBlock[]>(`/pro/api/content_blocks`, {
-      headers: {
-        'Dradis-Project-Id': projectId.toString(),
-      },
+    // Ensure only defined string properties are updated
+    Object.entries(vulnerability).forEach(([key, value]) => {
+      if (
+        (typeof value === "string" && value.trim() !== "") ||
+        value != undefined
+      ) {
+        updatedVulnerability[key] = value;
+      }
     });
-    
-    return blocks.map(block => ({
+
+    const dradisConstruct = this.ConstructDradisResponse(updatedVulnerability);
+
+    return this.request<Vulnerability>(`/pro/api/issues/${issueId}`, {
+      method: "PUT",
+      headers: {
+        "Dradis-Project-Id": projectId.toString(),
+      },
+      body: JSON.stringify({ issue: { text: dradisConstruct } }),
+    });
+  }
+
+  async getContentBlocks(
+    projectId: number
+  ): Promise<{ id: number; fields: object }[]> {
+    const blocks = await this.request<ContentBlock[]>(
+      `/pro/api/content_blocks`,
+      {
+        headers: {
+          "Dradis-Project-Id": projectId.toString(),
+        },
+      }
+    );
+
+    return blocks.map((block) => ({
       id: block.id,
-      fields: block.fields
+      fields: block.fields,
     }));
   }
 
-  async getContentBlock(projectId: number, blockId: number): Promise<ContentBlock> {
+  async getContentBlock(
+    projectId: number,
+    blockId: number
+  ): Promise<ContentBlock> {
     return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}`, {
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
+        "Dradis-Project-Id": projectId.toString(),
       },
     });
   }
 
-  async updateContentBlock(projectId: number, blockId: number, contentBlock: UpdateContentBlock): Promise<ContentBlock> {
-    const contentBlockInfo = await this.getContentBlock(projectId, blockId)
+  async updateContentBlock(
+    projectId: number,
+    blockId: number,
+    contentBlock: UpdateContentBlock
+  ): Promise<ContentBlock> {
+    const contentBlockInfo = await this.getContentBlock(projectId, blockId);
 
-    const content = (typeof contentBlock.content === 'object' && contentBlock.content !== null) ? Object.fromEntries(
-        Object.entries(contentBlock.content).filter(
-          ([, value]) => typeof value === 'string'
-        )
-      )
-    : {};
+    const content =
+      typeof contentBlock.content === "object" && contentBlock.content !== null
+        ? Object.fromEntries(
+            Object.entries(contentBlock.content).filter(
+              ([, value]) => typeof value === "string"
+            )
+          )
+        : {};
 
     for (const key in contentBlock.content) {
       if (Object.prototype.hasOwnProperty.call(contentBlock.content, key)) {
-        contentBlockInfo.fields[key] = (contentBlock.content as Record<string, string>)[key];
+        contentBlockInfo.fields[key] = (
+          contentBlock.content as Record<string, string>
+        )[key];
       }
-    }    
-    
-    const dradisConstruct = await this.ConstructDradisResponse(contentBlockInfo.fields)
+    }
+
+    const dradisConstruct = await this.ConstructDradisResponse(
+      contentBlockInfo.fields
+    );
     return this.request<ContentBlock>(`/pro/api/content_blocks/${blockId}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
-        'Content-Type': 'application/json',
+        "Dradis-Project-Id": projectId.toString(),
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ content_block: {block_group: contentBlock.block_group, content: dradisConstruct} }),
+      body: JSON.stringify({
+        content_block: {
+          block_group: contentBlock.block_group,
+          content: dradisConstruct,
+        },
+      }),
     });
   }
 
   async getDocumentProperties(projectId: number): Promise<DocumentProperty[]> {
-    return this.request<DocumentProperty[]>('/pro/api/document_properties', {
+    return this.request<DocumentProperty[]>("/pro/api/document_properties", {
       headers: {
-        'Dradis-Project-Id': projectId.toString(),
+        "Dradis-Project-Id": projectId.toString(),
       },
     });
   }
 
-  async upsertDocumentProperty(projectId: number, propertyName: string, value: string): Promise<DocumentProperty> {
-    const docProperties = await this.getDocumentProperties(projectId)
-    if (docProperties.some(property => propertyName in property && property[propertyName] !== undefined && property[propertyName] !== null)) {
-      return this.request<DocumentProperty>(`/pro/api/document_properties/${propertyName}`, {
-        method: 'PUT',
-        headers: {
-          'Dradis-Project-Id': projectId.toString(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          document_property: {
-            value: value
-          }
-        }),
-      });
-      }
-    return this.request<DocumentProperty>('/pro/api/document_properties', {
-      method: 'POST',
+  async upsertDocumentProperty(
+    projectId: number,
+    propertyName: string,
+    value: string
+  ): Promise<DocumentProperty> {
+    const docProperties = await this.getDocumentProperties(projectId);
+    if (
+      docProperties.some(
+        (property) =>
+          propertyName in property &&
+          property[propertyName] !== undefined &&
+          property[propertyName] !== null
+      )
+    ) {
+      return this.request<DocumentProperty>(
+        `/pro/api/document_properties/${propertyName}`,
+        {
+          method: "PUT",
+          headers: {
+            "Dradis-Project-Id": projectId.toString(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            document_property: {
+              value: value,
+            },
+          }),
+        }
+      );
+    }
+    return this.request<DocumentProperty>("/pro/api/document_properties", {
+      method: "POST",
       headers: {
-      'Dradis-Project-Id': projectId.toString(),
-      'Content-Type': 'application/json',
+        "Dradis-Project-Id": projectId.toString(),
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-      document_properties: { [propertyName]: value }
+        document_properties: { [propertyName]: value },
       }),
     });
   }

@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { loadConfig } from "./config.js"
+import { loadConfig } from "./config.js";
 
 const config = loadConfig();
-const createVulnParams = config.DRADIS_VULNERABILITY_PARAMETERS
-
+const createVulnParams = config.DRADIS_VULNERABILITY_PARAMETERS;
 
 // Project Types
 export const ClientSchema = z.object({
@@ -22,7 +21,7 @@ export const CustomFieldSchema = z.object({
 });
 
 export const ProjectCreationStateSchema = z.object({
-  state: z.enum(['being_created', 'completed']),
+  state: z.enum(["being_created", "completed"]),
 });
 
 export const ProjectDetailsSchema = z.object({
@@ -53,35 +52,30 @@ export const CreateProjectSchema = z.object({
 
 export type CreateProject = z.infer<typeof CreateProjectSchema>;
 
-// Vulnerability Types
-export const CreateVulnerabilitySchema = createVulnParams.reduce((schema, param) => {
-  return schema.extend({ [param]: z.string().nonempty(`${param} is required`) });  
-}, z.object({}));
-
-
-export type CreateVulnerabilityRequest = z.infer<typeof CreateVulnerabilitySchema>;
-
-export const UpdateVulnerabilitySchema = createVulnParams.reduce((schema, param) => {
-  return schema.extend({ [param]: z.string().optional() });  
-}, z.object({}));
-
-export type UpdateVulnerabilityRequest = z.infer<typeof CreateVulnerabilitySchema>;
-
-export const VulnerabilitySchemaDefault = z.object({
-  id: z.number(),
-  author: z.string(),
-  title: z.string(),
-  fields: z.any(),
-  text: z.string(),
-  created_at: z.string(),
-  updated_at: z.string(),
-});
-
-export const VulnerabilitySchema = createVulnParams.reduce<z.ZodObject<any>>(
-  (schema, param) => schema.extend({ [param]: z.string().optional() }),
-  VulnerabilitySchemaDefault
+// Vulnerability Types - Simplified approach for better TypeScript support
+export const CreateVulnerabilitySchema = z.record(
+  z.string().nonempty("Field is required")
 );
+export type CreateVulnerabilityRequest = z.infer<
+  typeof CreateVulnerabilitySchema
+>;
 
+export const UpdateVulnerabilitySchema = z.record(z.string().optional());
+export type UpdateVulnerabilityRequest = z.infer<
+  typeof UpdateVulnerabilitySchema
+>;
+
+export const VulnerabilitySchema = z
+  .object({
+    id: z.number(),
+    author: z.string(),
+    title: z.string(),
+    fields: z.record(z.unknown()),
+    text: z.string(),
+    created_at: z.string(),
+    updated_at: z.string(),
+  })
+  .passthrough(); // Allow additional fields
 
 export const VulnerabilityListItemSchema = z.object({
   id: z.number(),
@@ -90,7 +84,6 @@ export const VulnerabilityListItemSchema = z.object({
     Rating: z.string(),
   }),
 });
-
 
 export type Vulnerability = z.infer<typeof VulnerabilitySchema>;
 export type VulnerabilityListItem = z.infer<typeof VulnerabilityListItemSchema>;
@@ -115,11 +108,13 @@ export const SimpleContentBlockSchema = z.object({
 
 export const UpdateContentBlockSchema = z.object({
   block_group: z.string(),
-  content: z.object({}).passthrough().refine(
-    (val) => Object.keys(val).length > 0,
-    { message: "Content must have at least one key-value pair" }
-  ),
-})
+  content: z
+    .object({})
+    .passthrough()
+    .refine((val) => Object.keys(val).length > 0, {
+      message: "Content must have at least one key-value pair",
+    }),
+});
 
 export type ContentBlockFields = z.infer<typeof ContentBlockFieldsSchema>;
 export type ContentBlock = z.infer<typeof ContentBlockSchema>;
@@ -132,8 +127,12 @@ export type DocumentProperty = z.infer<typeof DocumentPropertySchema>;
 
 // Schema for creating document properties, expects an object with property names as keys and their values as strings
 // Example: { "dradis.client": "ACME Ltd.", "dradis.project": "Test Project" }
-export const CreateDocumentPropertiesSchema = z.record(z.string()).describe('An object mapping property names to their values');
-export type CreateDocumentProperties = z.infer<typeof CreateDocumentPropertiesSchema>;
+export const CreateDocumentPropertiesSchema = z
+  .record(z.string())
+  .describe("An object mapping property names to their values");
+export type CreateDocumentProperties = z.infer<
+  typeof CreateDocumentPropertiesSchema
+>;
 
 // Server State Types
 export interface ServerState {

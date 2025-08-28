@@ -14,7 +14,7 @@ import {
 } from "./types.js";
 import { loadConfig } from "./config.js";
 import https from "node:https";
-import log from "node:console";
+// Removed node:console import - using built-in console for now
 
 // Load configuration first
 const config = loadConfig();
@@ -22,6 +22,32 @@ const config = loadConfig();
 const server = new FastMCP({
   name: "Dradis MCP",
   version: "2.1.0",
+  instructions: `This is a Model Context Protocol (MCP) server for Dradis Framework integration.
+
+## Features
+- Create and manage Dradis projects
+- Create, read, and update vulnerabilities
+- Manage content blocks and document properties
+- Full CRUD operations for security assessment data
+
+## Getting Started
+1. First, set or create a project using 'setProject' or 'createProject'
+2. Once a project is set, you can create vulnerabilities, manage content blocks, and update document properties
+3. All operations are scoped to the currently selected project
+
+## Key Tools
+- **setProject**: Set the current project context (required before other operations)
+- **createProject**: Create a new Dradis project
+- **createVulnerability**: Add new security findings to the current project
+- **getVulnerabilities**: List all vulnerabilities in the current project
+- **updateVulnerability**: Modify existing vulnerability details
+- **getContentBlocks**: Retrieve project content blocks
+- **updateContentBlock**: Modify content block information
+- **getDocumentProperties**: View project document properties
+- **upsertDocumentProperty**: Create or update document properties
+
+## Authentication
+Requires DRADIS_URL and DRADIS_API_TOKEN environment variables to be configured.`,
 });
 
 // Server state
@@ -41,7 +67,6 @@ server.addTool({
   description: "Set the current Dradis project",
   parameters: z.object({
     projectId: z.number().positive("Project ID must be positive"),
-    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!api) {
@@ -60,9 +85,7 @@ server.addTool({
 server.addTool({
   name: "getProjectDetails",
   description: "Get details of the current Dradis project",
-  parameters: z.object({
-    body: z.object({}).optional().default({}),
-  }),
+  parameters: z.object({}),
   execute: async () => {
     if (!state.projectId) {
       throw new UserError(
@@ -82,9 +105,7 @@ server.addTool({
 server.addTool({
   name: "createProject",
   description: "Create a new Dradis project",
-  parameters: CreateProjectSchema.extend({
-    body: z.object({}).optional().default({}),
-  }),
+  parameters: CreateProjectSchema,
   execute: async (args) => {
     if (!api) {
       throw new UserError("API not initialized. Check your configuration.");
@@ -116,14 +137,11 @@ server.addTool({
 server.addTool({
   name: "createVulnerability",
   description: "Create a new vulnerability in the current project",
-  parameters: CreateVulnerabilitySchema.extend({
-    body: z.object({}).optional().default({}),
-  }),
+  parameters: CreateVulnerabilitySchema,
   execute: async (args) => {
-    log.info("createVulnerability", args);
     if (!state.projectId) {
       throw new UserError(
-        `No project ID set. Use setProject or createProject first. Current state: ${state.projectId}`
+        "No project ID set. Use setProject or createProject first."
       );
     }
     if (!api) {
@@ -131,7 +149,6 @@ server.addTool({
     }
 
     const result = await api.createVulnerability(state.projectId, args);
-    log.info("createVulnerability", result);
     return formatResponse({
       message: "Vulnerability created successfully",
       vulnerability: result,
@@ -150,7 +167,6 @@ server.addTool({
       .positive("Page number must be positive")
       .optional()
       .describe("Optional page number for pagination"),
-    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -185,7 +201,6 @@ server.addTool({
       .positive("Page number must be positive")
       .optional()
       .describe("Optional page number for pagination"),
-    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -215,7 +230,6 @@ server.addTool({
   description: "Get a specific vulnerability from the current project",
   parameters: z.object({
     vulnerabilityId: z.number().positive("Vulnerability ID must be positive"),
-    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -242,7 +256,6 @@ server.addTool({
   parameters: z.object({
     issueId: z.number().positive("Issue ID must be positive"),
     parameters: UpdateVulnerabilitySchema,
-    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -271,17 +284,18 @@ server.addTool({
 server.addTool({
   name: "getContentBlocks",
   description: "Get all content blocks in the current project",
-  parameters: z.object({
-    body: z.object({}).optional().default({}),
-  }),
-  async execute(args) {
-    const { projectId } = state;
-    if (!projectId) {
-      throw new Error("No project selected. Please select a project first.");
+  parameters: z.object({}),
+  execute: async () => {
+    if (!state.projectId) {
+      throw new UserError(
+        "No project ID set. Use setProject or createProject first."
+      );
+    }
+    if (!api) {
+      throw new UserError("API not initialized. Check your configuration.");
     }
 
-    const api = new DradisAPI(config);
-    const contentBlocks = await api.getContentBlocks(projectId);
+    const contentBlocks = await api.getContentBlocks(state.projectId);
     return `Output the content blocks in a list, with the ID followed by the fields (even empty fields with no values): ${formatResponse(
       contentBlocks
     )}`;
@@ -296,7 +310,6 @@ server.addTool({
   parameters: z.object({
     blockId: z.number().positive("Block ID must be positive"),
     contentBlock: UpdateContentBlockSchema,
-    body: z.object({}).optional().default({}),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -321,9 +334,7 @@ server.addTool({
 server.addTool({
   name: "getDocumentProperties",
   description: "Get all document properties for the current project",
-  parameters: z.object({
-    body: z.object({}).optional().default({}),
-  }),
+  parameters: z.object({}),
   execute: async () => {
     if (!state.projectId) {
       throw new UserError(
@@ -343,11 +354,12 @@ server.addTool({
 
 server.addTool({
   name: "upsertDocumentProperty",
-  description: "Update a document property in the current project",
+  description: "Create or update a document property in the current project",
   parameters: z.object({
-    propertyName: z.string(),
-    value: z.string(),
-    body: z.object({}).optional().default({}),
+    propertyName: z
+      .string()
+      .describe("The name of the property to create or update"),
+    value: z.string().describe("The value to set for the property"),
   }),
   execute: async (args) => {
     if (!state.projectId) {
@@ -412,25 +424,26 @@ server.addTool({
 // Test API connection before starting server
 async function testConnection() {
   try {
-    console.log("Testing API connection...");
-    const project = await api.getProjectDetails(1);
-    console.log("API connection successful!");
+    console.log("🔌 Testing API connection...");
+    await api.getProjectDetails(1);
+    console.log("✅ API connection successful!");
     return true;
   } catch (error) {
-    console.error("API connection failed:", error);
+    console.error("❌ API connection failed:", error);
     return false;
   }
 }
 
-// Modify server start to include connection test and better error handling
+// Server startup with improved logging and error handling
 (async () => {
   try {
-    console.log("Starting Dradis MCP server...");
-    console.log("Configuration loaded:", {
+    console.log("🚀 Starting Dradis MCP server...");
+    console.log("📊 Configuration summary:", {
       url: config.DRADIS_URL,
       hasToken: !!config.DRADIS_API_TOKEN,
-      defaultTeamId: config.DRADIS_DEFAULT_TEAM_ID,
-      defaultTemplateId: config.DRADIS_DEFAULT_TEMPLATE_ID,
+      defaultTeamId: config.DRADIS_DEFAULT_TEAM_ID ?? "Not set",
+      defaultTemplateId: config.DRADIS_DEFAULT_TEMPLATE_ID ?? "Not set",
+      vulnerabilityParams: config.DRADIS_VULNERABILITY_PARAMETERS?.length ?? 0,
     });
 
     // Test connection is commented out to avoid blocking startup
@@ -438,20 +451,25 @@ async function testConnection() {
     const connected = true;
 
     if (connected) {
-      console.log("Starting MCP server with stdio transport...");
+      console.log("🔗 Starting MCP server with stdio transport...");
       server.start({
         transportType: "stdio",
       });
-      console.log("MCP server started successfully");
+      console.log("✅ Dradis MCP server started successfully!");
+      console.log(
+        "📝 Available tools: setProject, createProject, createVulnerability, getVulnerabilities, updateVulnerability, getContentBlocks, updateContentBlock, getDocumentProperties, upsertDocumentProperty"
+      );
     } else {
-      console.error("Cannot start MCP server: API connection test failed");
+      console.error("❌ Cannot start MCP server: API connection test failed");
       process.exit(1);
     }
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error("💥 Failed to start server:", error);
     if (error instanceof Error) {
-      console.error("Error details:", error.message);
-      console.error("Stack trace:", error.stack);
+      console.error("📋 Error details:", error.message);
+      if (process.env.NODE_ENV === "development") {
+        console.error("🔍 Stack trace:", error.stack);
+      }
     }
     process.exit(1);
   }
